@@ -73,7 +73,7 @@ public class Publisher {
 Use the follow command to execute the Publisher example:
 
 ```sh
-dapr run --app-id publisher --port 3006 -- mvn exec:java -pl=examples -Dexec.mainClass=Publisher
+dapr run --app-id publisher --port 3006 -- mvn exec:java -pl=examples -D exec.mainClass=Publisher
 ```
 
 Once running, the Publisher should print the output as follows:
@@ -100,9 +100,9 @@ public class Subscriber {
     // If port string is not valid, it will throw an exception.
     int port = Integer.parseInt(cmd.getOptionValue("port"));
     // Subscribe to topic.
-    Dapr.getInstance().subscribeToTopic("message", (envelope, metadata) -> Mono
+    Dapr.getInstance().subscribeToTopic(TOPIC_NAME, (id, dataType, data, metadata) -> Mono
         .fromSupplier(() -> {
-          System.out.println("Subscriber got message: " + (envelope.getData() == null ? "" : new String(envelope.getData())));
+          System.out.println("Subscriber got message (" + id + "): " + (data == null ? "" : new String(data)));
           return Boolean.TRUE;
         })
         .then(Mono.empty()));
@@ -118,7 +118,7 @@ This class is using the `@SpringBootApplication` annotation which turns this cla
  
  Execute the follow script in order to run the Subscriber example:
 ```sh
-dapr run --app-id subscriber --app-port 3000 --port 3005 -- mvn exec:java -pl=examples -Dexec.mainClass=Subscriber -Dexec.args="-p 3000"
+dapr run --app-id subscriber --app-port 3000 --port 3005 -- mvn exec:java -pl=examples -D exec.mainClass=Subscriber -Dexec.args="-p 3000"
 ```
 Once running, the Subscriber should print the output as follows:
 
