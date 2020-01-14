@@ -47,7 +47,6 @@ public class Publisher {
       System.out.println("Published message: " + message);
       //..
     }
-  }
 ///...
 }
 ```
@@ -74,7 +73,7 @@ public class Publisher {
 Use the follow command to execute the Publisher example:
 
 ```sh
-dapr run --app-id publisher --port 3006 -- mvn exec:java -pl=examples -Dexec.mainClass=Publisher
+dapr run --app-id publisher --port 3006 -- mvn exec:java -pl=examples -D exec.mainClass=Publisher
 ```
 
 Once running, the Publisher should print the output as follows:
@@ -85,51 +84,41 @@ Messages have been published in the topic.
 
 ### Running the subscriber
 
-The other component is the subscriber. It will subscribe to the same topic used by the publisher and read the messages previously published. The Subscriber uses the Spring Boot´s DaprApplication class for initializing the `SubscriberController`. In `Subscriber.java` file, you will find the `Subscriber` class and the `main` method. See the code snippet below:
+The other component is the subscriber. It will subscribe to the same topic used by the publisher and read the messages previously published. In `Subscriber.java` file, you will find the `Subscriber` class and the `main` method. See the code snippet below:
 
 ```java
+@SpringBootApplication
 public class Subscriber {
-
+///...
   public static void main(String[] args) throws Exception {
-    ///...
+    Options options = new Options();
+    options.addRequiredOption("p", "port", true, "Port Dapr will listen to.");
+
+    CommandLineParser parser = new DefaultParser();
+    CommandLine cmd = parser.parse(options, args);
+
+    // If port string is not valid, it will throw an exception.
+    int port = Integer.parseInt(cmd.getOptionValue("port"));
+    // Subscribe to topic.
+    Dapr.getInstance().subscribeToTopic(TOPIC_NAME, (id, dataType, data, metadata) -> Mono
+        .fromSupplier(() -> {
+          System.out.println("Subscriber got message (" + id + "): " + (data == null ? "" : new String(data)));
+          return Boolean.TRUE;
+        })
+        .then(Mono.empty()));
+
     // Start Dapr's callback endpoint.
     DaprApplication.start(port);
   }
+///...
 }
 ```
-The `SubscriberController` is a is a Spring REST controller that handles the message retrieval as a POST. The Dapr's sidecar is the one that performs the actual call to the controller, based on the pubsub features.
 
-This Spring Controller handles the message endpoint, Printing the recieved message which is recieved as the POST body. See the code snippet below:
-
-```java
-@RestController
-public class SubscriberController {
-  ///...
-  @GetMapping("/dapr/subscribe")
-  public byte[] daprConfig() throws Exception {
-    return SERIALIZER.serialize(new String[] { "message" });
-  }
-
-  @PostMapping(path = "/message")
-  public Mono<Void> handleMessage(@RequestBody(required = false) byte[] body,
-                                   @RequestHeader Map<String, String> headers) {
-    return Mono.fromRunnable(() -> {
-      try {
-        // Dapr's event is compliant to CloudEvent.
-        CloudEventEnvelope envelope = SERIALIZER.deserialize(body, CloudEventEnvelope.class);
-
-        String message = envelope.getData() == null ? "" : new String(envelope.getData());
-        System.out.println("Subscriber got message: " + message);
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
-    });
-  }
-}
-```
-Execute the follow script in order to run the Subscriber example:
+This class is using the `@SpringBootApplication` annotation which turns this class into a runnable Spring boot application. The code retrieves the port from command parameter, then subcribes to the topic by using `Dapr.getInstance().subscribeToTopic` static method provided in the Java SDK, Through `Dapr` runtime static class. Once recieved, each message is printed in the console.
+ 
+ Execute the follow script in order to run the Subscriber example:
 ```sh
-dapr run --app-id subscriber --app-port 3000 --port 3005 -- mvn exec:java -pl=examples -Dexec.mainClass=io.dapr.examples.pubsub.Subscriber -Dexec.args="-p 3000"
+dapr run --app-id subscriber --app-port 3000 --port 3005 -- mvn exec:java -pl=examples -D exec.mainClass=Subscriber -Dexec.args="-p 3000"
 ```
 Once running, the Subscriber should print the output as follows:
 

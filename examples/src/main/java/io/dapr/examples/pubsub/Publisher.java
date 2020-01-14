@@ -16,14 +16,14 @@ import java.util.Collections;
  * 1. Build and install jars:
  * mvn clean install
  * 2. Run the program:
- * dapr run --app-id publisher --port 3006 -- mvn exec:java -pl=examples -D exec.mainClass=io.dapr.examples.pubsub.Publisher
+ * dapr run --app-id publisher --port 3006 -- mvn exec:java -pl=examples -D exec.mainClass=io.dapr.examples.pubsub.http.Publisher
  */
 public class Publisher {
 
   //Number of messages to be sent: 10
   private static final int NUM_MESSAGES = 10;
   //The title of the topic to be used for publishing
-  private static final String TOPIC_NAME = "testingtopic";
+  private static final String TOPIC_NAME = "testing_topic";
 
   public static void main(String[] args) throws Exception {
     //Creating the DaprClient: Using the default builder client produces an HTTP Dapr Client
