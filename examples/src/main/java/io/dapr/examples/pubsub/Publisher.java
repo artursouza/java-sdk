@@ -16,7 +16,7 @@ import java.util.Collections;
  * 1. Build and install jars:
  * mvn clean install
  * 2. Run the program:
- * dapr run --app-id publisher --port 3006 -- mvn exec:java -pl=examples -D exec.mainClass=io.dapr.examples.pubsub.http.Publisher
+ * dapr run --app-id publisher --port 3006 -- mvn exec:java -pl=examples -Dexec.mainClass=io.dapr.examples.pubsub.http.Publisher
  */
 public class Publisher {
 
