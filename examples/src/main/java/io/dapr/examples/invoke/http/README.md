@@ -71,7 +71,7 @@ This sample registers a method called `say` using the static `Dapr.getInstance()
 Use the follow command to execute the exposer example:
 
 ```sh
-dapr run --app-id invokedemo --app-port 3000 --port 3005 -- mvn exec:java -pl=examples -Dexec.mainClass=io.dapr.examples.invoke.http.ExposerService -Dexec.args="-p 3000"
+dapr run --app-id invokedemo --app-port 3000 --port 3005 -- mvn exec:java -pl=examples -Dexec.mainClass=io.dapr.examples.invoke.http.DemoService -Dexec.args="-p 3000"
 ```
 
 Once running, the ExposerService is now ready to be invoked by Dapr.
@@ -102,8 +102,8 @@ The class knows the app id for the remote application. It uses the the static `D
 ```sh
 dapr run --port 3006 -- mvn exec:java -pl=examples -Dexec.mainClass=io.dapr.examples.invoke.http.InvokeClient -Dexec.args="'message one' 'message two'"
 ```
-Once running, the output should display the messages sent from invoker in the exposer service output as follows:
+Once running, the outpust should read as follows:
 
-![exposeroutput](../../../../../../resources/img/exposer-service.png)
+![publisheroutput](../../../../../resources/img/subscriber.png)
 
-Method have been remotely invoked and displaying the remote messages.
+Method have been remotely invoked.

@@ -73,7 +73,7 @@ public class Publisher {
 Use the follow command to execute the Publisher example:
 
 ```sh
-dapr run --app-id publisher --port 3006 -- mvn exec:java -pl=examples -D exec.mainClass=Publisher
+dapr run --app-id publisher --port 3006 -- mvn exec:java -pl=examples -Dexec.mainClass=Publisher
 ```
 
 Once running, the Publisher should print the output as follows:
@@ -118,7 +118,7 @@ This class is using the `@SpringBootApplication` annotation which turns this cla
  
  Execute the follow script in order to run the Subscriber example:
 ```sh
-dapr run --app-id subscriber --app-port 3000 --port 3005 -- mvn exec:java -pl=examples -D exec.mainClass=Subscriber -Dexec.args="-p 3000"
+dapr run --app-id subscriber --app-port 3000 --port 3005 -- mvn exec:java -pl=examples -Dexec.mainClass=Subscriber -Dexec.args="-p 3000"
 ```
 Once running, the Subscriber should print the output as follows:
 
