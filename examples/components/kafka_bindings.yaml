@@ -1,7 +1,7 @@
 apiVersion: dapr.io/v1alpha1
 kind: Component
 metadata:
-  name: sample123
+  name: bindingSample
 spec:
   type: bindings.kafka
   metadata:
