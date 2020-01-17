@@ -1,6 +1,6 @@
 # Dapr Bindings Sample
 
-In this sample, we'll create a two java applications: An output binding application and an input binding application using Dapr Java SDK capabilities. 
+In this sample, we'll create two java applications: An output binding application and an input binding application, using Dapr Java SDK. 
 This sample includes two applications:
 
 * OutputBindingExample (pushes the event message)
@@ -8,7 +8,7 @@ This sample includes two applications:
 
 Visit [this](https://github.com/dapr/docs/tree/master/concepts/bindings) link for more information about Dapr and bindings concepts.
  
-## Bindings Sample using the Java-SDK
+## Binding sample using the Java-SDK
 
 This sample uses the Client provided in Dapr Java SDK for invoking bindings. Default implementation for binding event system is Kafka but others are also available.
 
@@ -47,15 +47,15 @@ public class OutputBindingExample {
 ///...
   public static void main(String[] args) throws Exception {
     DaprClient client = new DaprClientBuilder().build();
-    final String BINDING_NAME = "sample123";
+    final String BINDING_NAME = "bindingSample";
     ///...
     MyClass myClass = new MyClass();
     myClass.message = "hello";
 
     System.out.println("sending first message");
     client.invokeBinding(BINDING_NAME, myClass); //Binding a data object
-      //..
-	final String m = "cat";
+    ///..
+    final String m = "cat";
     System.out.println("sending " + m);
     client.invokeBinding(BINDING_NAME, m); //Binding a plain string text
     }
@@ -63,23 +63,23 @@ public class OutputBindingExample {
 }
 ```
 
-This example binds two events: A user-defined data object and a simple string using the same `invokeBinding` method.
+This example binds two events: A user-defined data object (using the `myClass` object as parameter) and a simple string using the same `invokeBinding` method.
 
 Use the follow command to execute the Output Binding example:
 
 ```sh
-dapr run --app-id outputbinding --port 3006 -- mvn exec:java -pl=examples -Dexec.mainClass=io.dapr.examples.bindings.http.OutputBindingExample
+dapr run --app-id outputbinding --port 3006 -- mvn exec:java -pl=examples -D exec.mainClass=io.dapr.examples.bindings.OutputBindingExample
 ```
 
 Once running, the OutputBindingExample should print the output as follows:
 
-![publisheroutput](../../../../../resources/img/publisher.png)
+![publisheroutput](../../../../../resources/img/outputbinding.png)
 
 Events have been sent.
 
 ### Running the Input binding sample
 
-The input binding sample uses the Dapr SDK and will register to the input binding so it will retrieve any publisehd event. In `InputBindingExample.java` file, you will find the `InputBindingExample` class and the `main` method. See the code snippet below:
+The input binding sample uses the Dapr SDK and will register to the input binding in order to retrieve any publisehd event. In `InputBindingExample.java` file, you will find the `InputBindingExample` class and the `main` method. See the code snippet below:
 
 ```java
 @SpringBootApplication
@@ -87,7 +87,7 @@ public class InputBindingExample {
 ///...
   public static void main(String[] args) throws Exception {
     ///...
-	final String BINDING_NAME = "sample123";
+	final String BINDING_NAME = "bindingSample";
 	///...   
     // "sample123" is the name of the binding.  It will be received at url /v1.0/bindings/sample123
     Dapr.getInstance().registerInputBinding(BINDING_NAME, (message, metadata) -> Mono
@@ -104,11 +104,11 @@ public class InputBindingExample {
 }
 ```
 
-This class is using the `@SpringBootApplication` annotation which turns this class into a runnable Spring boot application. The code retrieves the port from command parameter, then registers to the binding `Dapr.getInstance().registerInputBinding` static method provided in the Java SDK, Through `Dapr` runtime static class. Once recieved, each event is printed in the console.
+This class is using the `@SpringBootApplication` annotation which turns this class into a runnable Spring boot application. The code registers to the binding ny using `Dapr.getInstance().registerInputBinding` static method provided in the Java SDK through `Dapr` runtime static class. Once recieved, each event is printed in the console.
  
- Execute the follow script in order to run the Subscriber example:
+ Execute the follow script in order to run the Input Binding example:
 ```sh
-dapr run --app-id inputbinding --app-port 3000 --port 3005 -- mvn exec:java -Dexec.mainClass=io.dapr.examples.bindings.http.InputBindingExample -Dexec.args="-p 3000"
+dapr run --app-id inputbinding --app-port 3000 --port 3005 -- mvn exec:java -pl=examples -D exec.mainClass=io.dapr.examples.bindings.InputBindingExample -D exec.args="-p 3000"
 ```
 Once running, the InputBindingExample should print the output as follows:
 
