@@ -89,7 +89,7 @@ public class InputBindingExample {
     ///...
 	final String BINDING_NAME = "bindingSample";
 	///...   
-    // "sample123" is the name of the binding.  It will be received at url /v1.0/bindings/sample123
+    // "sample123" is the name of the binding.  It will be received at url /v1.0/bindings/bindingSample
     Dapr.getInstance().registerInputBinding(BINDING_NAME, (message, metadata) -> Mono
       .fromSupplier(() -> {
         System.out.println("Received message through binding: " + (message == null ? "" : new String(message)));
@@ -112,7 +112,7 @@ dapr run --app-id inputbinding --app-port 3000 --port 3005 -- mvn exec:java -pl=
 ```
 Once running, the InputBindingExample should print the output as follows:
 
-![publisheroutput](../../../../../resources/img/subscriber.png)
+![publisheroutput](../../../../../resources/img/inputbinding.png)
 
 Events have been retrieved from the binding.
 
