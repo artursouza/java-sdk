@@ -19,7 +19,7 @@ import reactor.core.publisher.Mono;
  * 1. Build and install jars:
  * mvn clean install
  * 2. Run the server:
- * dapr run --app-id subscriber --app-port 3000 --port 3005 -- mvn exec:java -pl=examples -Dexec.mainClass=io.dapr.examples.pubsub.http.Subscriber -Dexec.args="-p 3000"
+ * dapr run --app-id subscriber --app-port 3000 --port 3005 -- mvn exec:java -pl=examples -Dexec.mainClass=io.dapr.examples.pubsub.Subscriber -Dexec.args="-p 3000"
  */
 @SpringBootApplication
 public class Subscriber {

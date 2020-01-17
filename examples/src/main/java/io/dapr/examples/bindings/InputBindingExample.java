@@ -20,12 +20,13 @@ import reactor.core.publisher.Mono;
  * mvn clean install
  * 2. cd to [repo-root]/examples
  * 3. Run :
- * dapr run --app-id inputbinding --app-port 3000 --port 3005 -- mvn exec:java -Dexec.mainClass=io.dapr.examples.bindings.http.InputBindingExample -Dexec.args="-p 3000"
+ * dapr run --app-id inputbinding --app-port 3000 --port 3005 -- mvn exec:java -pl=examples -D exec.mainClass=io.dapr.examples.bindings.InputBindingExample -D exec.args="-p 3000"
  */
 @SpringBootApplication
 public class InputBindingExample {
 
   public static void main(String[] args) throws Exception {
+    //Handling parameters from command line
     Options options = new Options();
     options.addRequiredOption("p", "port", true, "Port Dapr will listen to.");
 
@@ -35,9 +36,10 @@ public class InputBindingExample {
     // If port string is not valid, it will throw an exception.
     int port = Integer.parseInt(cmd.getOptionValue("port"));
 
-    final String BINDING_NAME = "sample123";
+    //Name for the binding
+    final String BINDING_NAME = "bindingSample";
 
-    // "sample123" is the name of the binding.  It will be received at url /v1.0/bindings/sample123
+    // "bindingsample" is the name of the binding.  It will be received at url /v1.0/bindings/bindingsample
     Dapr.getInstance().registerInputBinding(BINDING_NAME, (message, metadata) -> Mono
       .fromSupplier(() -> {
         System.out.println("Received message through binding: " + (message == null ? "" : new String(message)));
