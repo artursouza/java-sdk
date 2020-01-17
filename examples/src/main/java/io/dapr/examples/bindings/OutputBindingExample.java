@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-package io.dapr.examples.bindings;
+package io.dapr.examples.bindings.http;
 
 import io.dapr.client.DaprClient;
 import io.dapr.client.DaprClientBuilder;
@@ -15,7 +15,7 @@ import io.dapr.serializer.DefaultObjectSerializer;
  *  mvn clean install
  * 2. cd to [repo-root]/examples
  * 3. Run the program:
- * dapr run --app-id outputbinding --port 3006 -- mvn exec:java -D exec.mainClass=io.dapr.examples.bindings.OutputBindingExample
+ * dapr run --app-id outputbinding --port 3006 -- mvn exec:java -pl=examples -Dexec.mainClass=io.dapr.examples.bindings.http.OutputBindingExample
  */
 public class OutputBindingExample {
 
@@ -27,7 +27,7 @@ public class OutputBindingExample {
   public static void main(String[] args) {
     DaprClient client = new DaprClientBuilder(new DefaultObjectSerializer(), new DefaultObjectSerializer()).build();
 
-    final String BINDING_NAME = "bindingSample";
+    final String BINDING_NAME = "sample123";
 
     // This is an example of sending data in a user-defined object.  The input binding will receive:
     //   {"message":"hello"}
