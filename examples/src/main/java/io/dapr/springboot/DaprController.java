@@ -5,7 +5,9 @@
 
 package io.dapr.springboot;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dapr.actors.runtime.ActorRuntime;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
@@ -15,13 +17,18 @@ import reactor.core.publisher.Mono;
 @RestController
 public class DaprController {
 
+  @Autowired
+  private ObjectMapper objectMapper;
+
+  private String topics;
+
   @GetMapping("/")
   public String index() {
     return "Greetings from Dapr!";
   }
 
   @GetMapping("/dapr/config")
-  public byte[] daprConfig() throws Exception {
+  public String daprConfig() throws Exception {
     return ActorRuntime.getInstance().serializeConfig();
   }
 
@@ -38,10 +45,10 @@ public class DaprController {
   }
 
   @PutMapping(path = "/actors/{type}/{id}/method/{method}")
-  public Mono<byte[]> invokeActorMethod(@PathVariable("type") String type,
+  public Mono<String> invokeActorMethod(@PathVariable("type") String type,
                                         @PathVariable("id") String id,
                                         @PathVariable("method") String method,
-                                        @RequestBody(required = false) byte[] body) {
+                                        @RequestBody(required = false) String body) {
     return ActorRuntime.getInstance().invoke(type, id, method, body);
   }
 
@@ -56,7 +63,7 @@ public class DaprController {
   public Mono<Void> invokeActorReminder(@PathVariable("type") String type,
                                         @PathVariable("id") String id,
                                         @PathVariable("reminder") String reminder,
-                                        @RequestBody(required = false) byte[] body) {
+                                        @RequestBody(required = false) String body) {
     return ActorRuntime.getInstance().invokeReminder(type, id, reminder, body);
   }
 

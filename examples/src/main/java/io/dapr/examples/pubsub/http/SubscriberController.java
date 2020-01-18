@@ -34,9 +34,9 @@ public class SubscriberController {
     return Mono.fromRunnable(() -> {
       try {
         // Dapr's event is compliant to CloudEvent.
-        CloudEvent envelope = CloudEvent.deserialize(body);
+        CloudEvent event = CloudEvent.deserialize(body);
 
-        String message = envelope.getData() == null ? "" : new String(envelope.getData());
+        String message = event.getData() == null ? "" : new String(event.getData());
         System.out.println("Subscriber got message: " + message);
       } catch (Exception e) {
         throw new RuntimeException(e);
