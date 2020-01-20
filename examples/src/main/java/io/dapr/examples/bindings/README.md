@@ -20,6 +20,7 @@ Visit [this](https://github.com/dapr/components-contrib/tree/master/bindings) li
 * [Dapr and Dapr Cli](https://github.com/dapr/docs/blob/master/getting-started/environment-setup.md#environment-setup).
 * Java JDK 11 (or greater): [Oracle JDK](https://www.oracle.com/technetwork/java/javase/downloads/index.html#JDK11) or [OpenJDK](https://jdk.java.net/13/).
 * [Apache Maven](https://maven.apache.org/install.html) version 3.x.
+* A Kafka docker container running locally
 
 ### Checking out the code
 
@@ -36,8 +37,22 @@ Then build the Maven project:
 # make sure you are in the `java-sdk` directory.
 mvn install
 ```
+### Setting Kafka locally
 
-### Running the Output binding sample
+Before getting into the application code, follow these steps in order to setup a local instance of Kafka. This is needed for the local instances.  Steps are:
+
+1. Run `docker-compose -f ./docker-compose-single-kafka.yml up -d` to run the container locally
+2. Run `docker ps` to see the container running locally: 
+
+```bash
+342d3522ca14        kafka-docker_kafka                      "start-kafka.sh"         14 hours ago        Up About
+a minute   0.0.0.0:9092->9092/tcp                               kafka-docker_kafka_1
+0cd69dbe5e65        wurstmeister/zookeeper                  "/bin/sh -c '/usr/sb…"   8 days ago          Up About
+a minute   22/tcp, 2888/tcp, 3888/tcp, 0.0.0.0:2181->2181/tcp   kafka-docker_zookeeper_1
+```
+Click [here](https://github.com/wurstmeister/kafka-docker) for more information about the kafka broker server.
+
+### Running the Output binding sample 
 
 The output binding application is a simple java class with a main method that uses the Dapr Client to invoke binding.
 
