@@ -23,7 +23,7 @@ public class Publisher {
   //Number of messages to be sent: 10
   private static final int NUM_MESSAGES = 10;
   //The title of the topic to be used for publishing
-  private static final String TOPIC_NAME = "testing_topic";
+  private static final String TOPIC_NAME = "testingtopic";
 
   public static void main(String[] args) throws Exception {
     //Creating the DaprClient: Using the default builder client produces an HTTP Dapr Client

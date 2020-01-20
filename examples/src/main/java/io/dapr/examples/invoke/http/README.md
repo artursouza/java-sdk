@@ -3,7 +3,8 @@
 In this sample, we'll create a two java applications: An exposer service application which exposes a method and a client application which will invoke the method from demo service using Dapr.
 This sample includes:
 
-* ExposerService (An application that exposes a method to be invoked)
+* ExposerService (Initializes the ExposerServiceController)
+* ExposerServiceController (Handles the remote invoking call)
 * InvokeClient (Invokes the exposed method from DemoService)
 
 Visit [this](https://github.com/dapr/docs/blob/master/concepts/service-invocation/service-invocation.md) link for more information about Dapr and service invocation.
@@ -37,36 +38,54 @@ mvn install
 
 ### Running the Exposer service sample
 
-The Exposer service application is a simple java class with a main method that uses the Dapr Client to declare and expose a method. Such method can now be invoked remotely. 
+The Exposer service application is meant to expose a method that can be remotely invoked. In this example, the exposer feature has two parts:
 
-In the `ExposerService.java` file, you will find the `ExposerService` class, containing the main method. The main method declares the method to be invoked remotely. This method will recieve two parameters: `data` and `metadata` and will print them whenever the method is invoked. See the code snippet below:
+In the `ExposerService.java` file, you will find the `ExposerService` class, containing the main method. The main method uses the Spring Boot´s DaprApplication class for initializing the `ExposerServiceController`. See the code snippet below:
 
 ```java
 public class ExposerService {
-///...
+  ///...
   public static void main(String[] args) throws Exception {
     ///...
-    Dapr.getInstance().registerServiceMethod("say", (data, metadata) -> {
-      String message = data == null ? "" : new String(data, StandardCharsets.UTF_8);
+    // If port string is not valid, it will throw an exception.
+    int port = Integer.parseInt(cmd.getOptionValue("port"));
 
-      Calendar utcNow = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-      String utcNowAsString = DATE_FORMAT.format(utcNow.getTime());
-
-      String metadataString = metadata == null ? "" : OBJECT_MAPPER.writeValueAsString(metadata);
-
-      // Handles the request by printing message.
-      System.out.println(
-        "Server: " + message + " @ " + utcNowAsString + " and metadata: " + metadataString);
-
-      return Mono.just(utcNowAsString.getBytes(StandardCharsets.UTF_8));
-    });
-    //..
-    }
-///...
+    DaprApplication.start(port);
+  }
 }
 ```
+The `ExposerServiceController` is a is a Spring REST controller that handles the invoking action as a POST. The Dapr's sidecar is the one that performs the actual call to the controller, based on the binding features and the remote invocation action.
 
-This sample registers a method called `say` using the static `Dapr.getInstance().registerServiceMethod` method. The method retreives the data and metadata and prints them along with the current date in console. The actual response from method is the formatted current date. 
+This Spring Controller exposes the `say` method. The method retrieves metadata from the headers and prints them along with the current date in console. The actual response from method is the formatted current date. See the code snippet below:
+
+```java
+@RestController
+public class ExposerServiceController {
+  ///...
+  @PostMapping(path = "/say")
+  public Mono<String> handleMethod(@RequestBody(required = false) byte[] body,
+                                   @RequestHeader Map<String, String> headers) {
+    return Mono.fromSupplier(() -> {
+      try {
+        String message = body == null ? "" : new String(body, StandardCharsets.UTF_8);
+
+        Calendar utcNow = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+        String utcNowAsString = DATE_FORMAT.format(utcNow.getTime());
+
+        String metadataString = headers == null ? "" : OBJECT_MAPPER.writeValueAsString(headers);
+
+        // Handles the request by printing message.
+        System.out.println(
+          "Server: " + message + " @ " + utcNowAsString + " and metadata: " + metadataString);
+
+        return utcNowAsString;
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    });
+  }
+}
+```
 
 Use the follow command to execute the exposer example:
 

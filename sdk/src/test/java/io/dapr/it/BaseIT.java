@@ -21,10 +21,10 @@ public class BaseIT {
   protected static DaprIntegrationTestingRunner daprIntegrationTestingRunner;
 
 
-  @ClassRule
+  //@ClassRule
   public static final EnvironmentVariables environmentVariables = new EnvironmentVariables();
 
-  @BeforeClass
+  //@BeforeClass
   public static void setEnvironmentVariables(){
     environmentVariables.set("DAPR_HTTP_PORT", String.valueOf(DAPR_FREEPORTS.getHttpPort()));
     environmentVariables.set("DAPR_GRPC_PORT", String.valueOf(DAPR_FREEPORTS.getGrpcPort()));
@@ -34,7 +34,7 @@ public class BaseIT {
     return new DaprIntegrationTestingRunner(successMessage, serviceClass, useAppPort, sleepTime);
   }
 
-  @AfterClass
+  //@AfterClass
   public static void cleanUp() {
     Optional.ofNullable(daprIntegrationTestingRunner).ifPresent(daprRunner ->  daprRunner.destroyDapr());
   }
