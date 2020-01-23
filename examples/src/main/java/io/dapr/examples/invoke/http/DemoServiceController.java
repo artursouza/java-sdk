@@ -23,7 +23,7 @@ import java.util.TimeZone;
  * SpringBoot Controller to handle input binding.
  */
 @RestController
-public class ExposerServiceController {
+public class DemoServiceController {
 
   /**
    * Json serializer/deserializer.

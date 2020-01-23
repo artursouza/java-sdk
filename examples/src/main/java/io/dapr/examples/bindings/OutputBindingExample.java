@@ -16,7 +16,7 @@ import io.dapr.serializer.DefaultObjectSerializer;
  *  mvn clean install
  * 2. cd to [repo-root]/examples
  * 3. Run the program:
- * dapr run --app-id outputbinding --port 3006 -- mvn exec:java -D exec.mainClass=io.dapr.examples.bindings.http.OutputBindingExample
+ * dapr run --app-id outputbinding --port 3006 -- mvn exec:java -D exec.mainClass=io.dapr.examples.bindings.OutputBindingExample
  */
 public class OutputBindingExample {
 
@@ -35,13 +35,13 @@ public class OutputBindingExample {
     MyClass myClass = new MyClass();
     myClass.message = "hello";
 
-    System.out.println("sending first message");
+    System.out.println("sending a class with message: " + myClass.message);
     client.invokeBinding(BINDING_NAME, myClass).block();
 
     // This is an example of sending a plain string.  The input binding will receive
     //   cat
     final String m = "cat";
-    System.out.println("sending " + m);
+    System.out.println("sending a plain string: " + m);
     client.invokeBinding(BINDING_NAME, m).block();
 
     try {

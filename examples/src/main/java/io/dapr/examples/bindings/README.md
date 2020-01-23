@@ -1,17 +1,16 @@
 # Dapr Bindings Sample
 
-In this sample, we'll create two java applications: An output binding application and an input binding application, using Dapr Java SDK. 
+In this sample, we'll create two java applications: an output binding application and an input binding application, using Dapr Java SDK. 
 This sample includes two applications:
 
 * InputBindingExample (Initializes the Dapr Spring boot application client)
-* InputBindingController (Handles the input bining event)
 * OutputBindingExample (pushes the event message)
 
 Visit [this](https://github.com/dapr/docs/tree/master/concepts/bindings) link for more information about Dapr and bindings concepts.
  
 ## Binding sample using the Java-SDK
 
-This sample uses the capabilities provided in Dapr Java SDK for invoking bindings. Default implementation for binding event system is Kafka but others are also available.
+In this example, the component used is Kafka but others are also available.
 
 Visit [this](https://github.com/dapr/components-contrib/tree/master/bindings) link for more information about binding implementations.
 
@@ -21,7 +20,6 @@ Visit [this](https://github.com/dapr/components-contrib/tree/master/bindings) li
 * [Dapr and Dapr Cli](https://github.com/dapr/docs/blob/master/getting-started/environment-setup.md#environment-setup).
 * Java JDK 11 (or greater): [Oracle JDK](https://www.oracle.com/technetwork/java/javase/downloads/index.html#JDK11) or [OpenJDK](https://jdk.java.net/13/).
 * [Apache Maven](https://maven.apache.org/install.html) version 3.x.
-* A Kafka docker container running locally
 
 ### Checking out the code
 
@@ -40,10 +38,11 @@ mvn install
 ```
 ### Setting Kafka locally
 
-Before getting into the application code, follow these steps in order to setup a local instance of Kafka. This is needed for the local instances.  Steps are:
+Before getting into the application code, follow these steps in order to setup a local instance of Kafka. This is needed for the local instances. Steps are:
 
-1. Run `docker-compose -f ./docker-compose-single-kafka.yml up -d` to run the container locally
-2. Run `docker ps` to see the container running locally: 
+1. navigate to the [repo-root]/examples/src/main/java/io/dapr/examples/bindings
+2. Run `docker-compose -f ./docker-compose-single-kafka.yml up -d` to run the container locally
+3. Run `docker ps` to see the container running locally: 
 
 ```bash
 342d3522ca14        kafka-docker_kafka                      "start-kafka.sh"         14 hours ago        Up About
@@ -72,7 +71,20 @@ public class InputBindingExample {
 }
 ```
 
-The `InputBindingController` is a Spring REST controller that handles the input binding request as a POST. The Dapr's sidecar is the one that performs the actual call to the controller, based on the binding features and the output binding action. 
+`DaprApplication.start()` Method will run an Spring Boot application that registers the `InputBindingController`, which exposes the actual handling of the event message as a POST request. The Dapr's sidecar is the one that performs the actual call to this controller, based on the binding features and the output binding action. 
+
+```java
+@RestController
+public class InputBindingController {
+
+  @PostMapping(path = "/bindingSample")
+  public Mono<Void> handleInputBinding(@RequestBody(required = false) byte[] body) {
+    return Mono.fromRunnable(() ->
+      System.out.println("Received message through binding: " + (body == null ? "" : new String(body))));
+  }
+
+}
+```
 
  Execute the follow script in order to run the Input Binding example:
 ```sh
@@ -89,17 +101,17 @@ In the `OutputBindingExample.java` file, you will find the `OutputBindingExample
 public class OutputBindingExample {
 ///...
   public static void main(String[] args) throws Exception {
-    DaprClient client = new DaprClientBuilder().build();
+    DaprClient client = new DaprClientBuilder(new DefaultObjectSerializer()).build();
     final String BINDING_NAME = "bindingSample";
     ///...
     MyClass myClass = new MyClass();
     myClass.message = "hello";
 
-    System.out.println("sending first message");
+    System.out.println("sending an object instance with message: " + myClass.message);
     client.invokeBinding(BINDING_NAME, myClass); //Binding a data object
     ///..
     final String m = "cat";
-    System.out.println("sending " + m);
+    System.out.println("sending a plain string: " + m);
     client.invokeBinding(BINDING_NAME, m); //Binding a plain string text
     }
 ///...
@@ -127,4 +139,4 @@ Once running, the InputBindingExample should print the output as follows:
 
 Events have been retrieved from the binding.
 
-For more details on Dapr Spring Boot integration, please refer to [Dapr Spring Boot](/../java/io/dapr/springboot/DaprApplication.java) Application implementation.
+For more details on Dapr Spring Boot integration, please refer to [Dapr Spring Boot](../../springboot/DaprApplication.java)  Application implementation.

@@ -3,15 +3,14 @@
 In this sample, we'll create a two java applications: An exposer service application which exposes a method and a client application which will invoke the method from demo service using Dapr.
 This sample includes:
 
-* ExposerService (Initializes the ExposerServiceController)
-* ExposerServiceController (Handles the remote invoking call)
+* DemoService (Exposes the method to be remotely accessed)
 * InvokeClient (Invokes the exposed method from DemoService)
 
 Visit [this](https://github.com/dapr/docs/blob/master/concepts/service-invocation/service-invocation.md) link for more information about Dapr and service invocation.
  
 ## Remote invocation using the Java-SDK
 
-This sample uses the Client provided in Dapr Java SDK for exposing and invoking a remote method.  
+This sample uses the Client provided in Dapr Java SDK invoking a remote method. Exposing the method  
 
 
 ## Pre-requisites
@@ -36,14 +35,14 @@ Then build the Maven project:
 mvn install
 ```
 
-### Running the Exposer service sample
+### Running the Demo service sample
 
-The Exposer service application is meant to expose a method that can be remotely invoked. In this example, the exposer feature has two parts:
+The Demo service application is meant to expose a method that can be remotely invoked. In this example, the exposer feature has two parts:
 
-In the `ExposerService.java` file, you will find the `ExposerService` class, containing the main method. The main method uses the Spring Boot´s DaprApplication class for initializing the `ExposerServiceController`. See the code snippet below:
+In the `DemoService.java` file, you will find the `DemoService` class, containing the main method. The main method uses the Spring Boot´s DaprApplication class for initializing the `ExposerServiceController`. See the code snippet below:
 
 ```java
-public class ExposerService {
+public class DemoService {
   ///...
   public static void main(String[] args) throws Exception {
     ///...
@@ -54,7 +53,8 @@ public class ExposerService {
   }
 }
 ```
-The `ExposerServiceController` is a is a Spring REST controller that handles the invoking action as a POST. The Dapr's sidecar is the one that performs the actual call to the controller, based on the binding features and the remote invocation action.
+
+`DaprApplication.start()` Method will run an Spring Boot application that registers the `DemoServiceController`, which exposes the invoking action as a POST request. The Dapr's sidecar is the one that performs the actual call to the controller, based on the binding features and the remote invocation action.
 
 This Spring Controller exposes the `say` method. The method retrieves metadata from the headers and prints them along with the current date in console. The actual response from method is the formatted current date. See the code snippet below:
 
@@ -90,7 +90,7 @@ public class ExposerServiceController {
 Use the follow command to execute the exposer example:
 
 ```sh
-dapr run --app-id invokedemo --app-port 3000 --port 3005 -- mvn exec:java -pl=examples -Dexec.mainClass=io.dapr.examples.invoke.http.ExposerService -Dexec.args="-p 3000"
+dapr run --app-id invokedemo --app-port 3000 --port 3005 -- mvn exec:java -pl=examples -D exec.mainClass=io.dapr.examples.invoke.http.DemoService -D exec.args="-p 3000"
 ```
 
 Once running, the ExposerService is now ready to be invoked by Dapr.
@@ -106,7 +106,7 @@ public class InvokeClient {
 private static final String SERVICE_APP_ID = "invokedemo";
 ///...
   public static void main(String[] args) {
-    DaprClient client = (new DaprClientBuilder()).build();
+    DaprClient client = (new DaprClientBuilder(new DefaultObjectSerializer())).build();
     for (String message : args) {
       client.invokeService(Verb.POST, SERVICE_APP_ID, "say", message, null, String.class).block();
     }
@@ -119,10 +119,12 @@ The class knows the app id for the remote application. It uses the the static `D
  
  Execute the follow script in order to run the InvokeClient example, passing two messages for the remote method:
 ```sh
-dapr run --port 3006 -- mvn exec:java -pl=examples -Dexec.mainClass=io.dapr.examples.invoke.http.InvokeClient -Dexec.args="'message one' 'message two'"
+dapr run --port 3006 -- mvn exec:java -pl=examples -D exec.mainClass=io.dapr.examples.invoke.http.InvokeClient -D exec.args="'message one' 'message two'"
 ```
 Once running, the output should display the messages sent from invoker in the exposer service output as follows:
 
 ![exposeroutput](../../../../../../resources/img/exposer-service.png)
 
 Method have been remotely invoked and displaying the remote messages.
+
+For more details on Dapr Spring Boot integration, please refer to [Dapr Spring Boot](../../../springboot/DaprApplication.java) Application implementation.
