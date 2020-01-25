@@ -8,6 +8,7 @@ package io.dapr.client;
 import io.dapr.DaprGrpc;
 import io.dapr.serializer.DefaultObjectSerializer;
 import io.dapr.utils.Constants;
+import io.dapr.utils.Properties;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
@@ -29,9 +30,9 @@ public class DaprClientTestBuilder {
      * Builds a DaprGrpcClient.
      * @return New instance of DaprClient.
      */
-    public static DaprClient buildGrpcClient(){
-       int gprcPort = Integer.parseInt(System.getenv(Constants.ENV_DAPR_GRPC_PORT));
-        ManagedChannel channel = ManagedChannelBuilder.forAddress(Constants.DEFAULT_HOSTNAME, gprcPort).usePlaintext().build();
+    public static DaprClient buildGrpcClient() {
+        ManagedChannel channel = ManagedChannelBuilder.forAddress(
+          Constants.DEFAULT_HOSTNAME, Properties.GRPC_PORT.get()).usePlaintext().build();
         return new DaprClientGrpcAdapter(DaprGrpc.newFutureStub(channel),
           new DefaultObjectSerializer(),
           new DefaultObjectSerializer());
