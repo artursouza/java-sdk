@@ -15,9 +15,9 @@ import java.util.Map;
  * Stub class for DaprHttp.
  * Useful to mock as well since it provides a default constructor.
  */
-public class DaprHttpStub extends DaprHttp {
+public class DaprOkHttpClientStub extends DaprOkHttpClient {
 
-    public static class ResponseStub extends DaprHttp.Response {
+    public static class ResponseStub extends DaprOkHttpClient.Response {
         public ResponseStub(byte[] body, Map<String, String> headers, int statusCode) {
             super(body, headers, statusCode);
         }
@@ -25,7 +25,7 @@ public class DaprHttpStub extends DaprHttp {
     /**
      * Instantiates a stub for DaprHttp
      */
-    public DaprHttpStub() {
+    public DaprOkHttpClientStub() {
         super(null, 3000, null);
     }
 

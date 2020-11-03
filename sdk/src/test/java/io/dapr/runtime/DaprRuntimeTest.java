@@ -10,7 +10,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import io.dapr.client.DaprClient;
 import io.dapr.client.DaprClientHttp;
 import io.dapr.client.DaprClientTestBuilder;
-import io.dapr.client.DaprHttpStub;
+import io.dapr.client.DaprOkHttpClientStub;
 import io.dapr.client.domain.CloudEvent;
 import io.dapr.client.domain.HttpExtension;
 import io.dapr.serializer.DaprObjectSerializer;
@@ -114,7 +114,7 @@ public class DaprRuntimeTest {
             generateSingleMetadata())
     };
 
-    DaprHttpStub daprHttp = mock(DaprHttpStub.class);
+    DaprOkHttpClientStub daprHttp = mock(DaprOkHttpClientStub.class);
     DaprClient client = DaprClientTestBuilder.buildHttpClient(daprHttp);
     DaprObjectSerializer serializer = new DefaultObjectSerializer();
 
@@ -198,7 +198,7 @@ public class DaprRuntimeTest {
             generateSingleMetadata())
     };
 
-    DaprHttpStub daprHttp = mock(DaprHttpStub.class);
+    DaprOkHttpClientStub daprHttp = mock(DaprOkHttpClientStub.class);
     DaprClient client = DaprClientTestBuilder.buildHttpClient(daprHttp);
 
     DaprObjectSerializer serializer = new DefaultObjectSerializer();
@@ -219,7 +219,7 @@ public class DaprRuntimeTest {
               METHOD_NAME,
               serializer.serialize(message.data),
               message.metadata)
-          .map(r -> new DaprHttpStub.ResponseStub(r, null, 200)));
+          .map(r -> new DaprOkHttpClientStub.ResponseStub(r, null, 200)));
       Mono<byte[]> response = client.invokeService(APP_ID, METHOD_NAME, message.data, HttpExtension.POST,
           message.metadata, byte[].class);
       Assert.assertArrayEquals(expectedResponse, response.block());

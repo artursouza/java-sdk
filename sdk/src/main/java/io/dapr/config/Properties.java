@@ -44,6 +44,11 @@ public class Properties {
   private static final Integer DEFAULT_HTTP_CLIENT_READTIMEOUTSECONDS = 60;
 
   /**
+   * Dapr's default HTTP Client.
+   */
+  private static final String DEFAULT_HTTP_CLIENT = "sync";
+
+  /**
    * IP for Dapr's sidecar.
    */
   public static final Property<String> SIDECAR_IP = new StringProperty(
@@ -74,6 +79,14 @@ public class Properties {
       "dapr.grpc.enabled",
       "DAPR_GRPC_ENABLED",
       DEFAULT_GRPC_ENABLED);
+
+  /**
+   * Determines which HTTP Client should be used by Dapr.
+   */
+  public static final Property<String> HTTP_CLIENT = new StringProperty(
+      "dapr.http.client",
+      "DAPR_HTTP_CLIENT",
+      DEFAULT_HTTP_CLIENT);
 
   /**
    * API token for authentication between App and Dapr's side car.

@@ -6,6 +6,7 @@
 package io.dapr.actors.runtime;
 
 import io.dapr.client.DaprHttp;
+import io.dapr.client.DaprOkHttpClient;
 import reactor.core.publisher.Mono;
 
 /**
@@ -16,7 +17,7 @@ class DaprHttpClient implements DaprClient {
   /**
    * Base URL for Dapr Actor APIs.
    */
-  private static final String ACTORS_BASE_URL = DaprHttp.API_VERSION + "/" + "actors";
+  private static final String ACTORS_BASE_URL = DaprOkHttpClient.API_VERSION + "/" + "actors";
 
   /**
    * String format for Actors state management relative url.
@@ -41,7 +42,7 @@ class DaprHttpClient implements DaprClient {
   /**
    * The HTTP client to be used.
    *
-   * @see DaprHttp
+   * @see DaprOkHttpClient
    */
   private final DaprHttp client;
 
@@ -60,8 +61,8 @@ class DaprHttpClient implements DaprClient {
   @Override
   public Mono<byte[]> getActorState(String actorType, String actorId, String keyName) {
     String url = String.format(ACTOR_STATE_KEY_RELATIVE_URL_FORMAT, actorType, actorId, keyName);
-    Mono<DaprHttp.Response> responseMono =
-        this.client.invokeApi(DaprHttp.HttpMethods.GET.name(), url, null, "", null, null);
+    Mono<DaprOkHttpClient.Response> responseMono =
+        this.client.invokeApi(DaprHttp.HttpMethod.GET.name(), url, null, "", null, null);
     return responseMono.map(r -> {
       if ((r.getStatusCode() != 200) && (r.getStatusCode() != 204)) {
         throw new IllegalStateException(
@@ -77,7 +78,7 @@ class DaprHttpClient implements DaprClient {
   @Override
   public Mono<Void> saveActorStateTransactionally(String actorType, String actorId, byte[] data) {
     String url = String.format(ACTOR_STATE_RELATIVE_URL_FORMAT, actorType, actorId);
-    return this.client.invokeApi(DaprHttp.HttpMethods.PUT.name(), url, null, data, null, null).then();
+    return this.client.invokeApi(DaprHttp.HttpMethod.PUT.name(), url, null, data, null, null).then();
   }
 
   /**
@@ -86,7 +87,7 @@ class DaprHttpClient implements DaprClient {
   @Override
   public Mono<Void> registerActorReminder(String actorType, String actorId, String reminderName, byte[] data) {
     String url = String.format(ACTOR_REMINDER_RELATIVE_URL_FORMAT, actorType, actorId, reminderName);
-    return this.client.invokeApi(DaprHttp.HttpMethods.PUT.name(), url, null, data, null, null).then();
+    return this.client.invokeApi(DaprHttp.HttpMethod.PUT.name(), url, null, data, null, null).then();
   }
 
   /**
@@ -95,7 +96,7 @@ class DaprHttpClient implements DaprClient {
   @Override
   public Mono<Void> unregisterActorReminder(String actorType, String actorId, String reminderName) {
     String url = String.format(ACTOR_REMINDER_RELATIVE_URL_FORMAT, actorType, actorId, reminderName);
-    return this.client.invokeApi(DaprHttp.HttpMethods.DELETE.name(), url, null, null, null).then();
+    return this.client.invokeApi(DaprHttp.HttpMethod.DELETE.name(), url, null, null, null).then();
   }
 
   /**
@@ -104,7 +105,7 @@ class DaprHttpClient implements DaprClient {
   @Override
   public Mono<Void> registerActorTimer(String actorType, String actorId, String timerName, byte[] data) {
     String url = String.format(ACTOR_TIMER_RELATIVE_URL_FORMAT, actorType, actorId, timerName);
-    return this.client.invokeApi(DaprHttp.HttpMethods.PUT.name(), url, null, data, null, null).then();
+    return this.client.invokeApi(DaprHttp.HttpMethod.PUT.name(), url, null, data, null, null).then();
   }
 
   /**
@@ -113,7 +114,7 @@ class DaprHttpClient implements DaprClient {
   @Override
   public Mono<Void> unregisterActorTimer(String actorType, String actorId, String timerName) {
     String url = String.format(ACTOR_TIMER_RELATIVE_URL_FORMAT, actorType, actorId, timerName);
-    return this.client.invokeApi(DaprHttp.HttpMethods.DELETE.name(), url, null, null, null).then();
+    return this.client.invokeApi(DaprHttp.HttpMethod.DELETE.name(), url, null, null, null).then();
   }
 
 }

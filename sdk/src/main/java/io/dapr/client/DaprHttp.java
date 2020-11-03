@@ -6,18 +6,8 @@
 package io.dapr.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.dapr.config.Properties;
 import io.dapr.exceptions.DaprError;
-import io.dapr.exceptions.DaprException;
 import io.grpc.Context;
-import io.opentelemetry.OpenTelemetry;
-import io.opentelemetry.context.propagation.HttpTextFormat;
-import okhttp3.HttpUrl;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.ResponseBody;
 import org.jetbrains.annotations.NotNull;
 import reactor.core.publisher.Mono;
 
@@ -25,13 +15,9 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
 
-public class DaprHttp implements Closeable {
+public abstract class DaprHttp implements Closeable {
 
   /**
    * Dapr API used in this client.
@@ -41,28 +27,17 @@ public class DaprHttp implements Closeable {
   /**
    * Header used for request id in Dapr.
    */
-  private static final String HEADER_DAPR_REQUEST_ID = "X-DaprRequestId";
+  protected static final String HEADER_DAPR_REQUEST_ID = "X-DaprRequestId";
 
   /**
    * Dapr's http default scheme.
    */
-  private static final String DEFAULT_HTTP_SCHEME = "http";
-
-  /**
-   * Sets the headers for OpenTelemetry SDK.
-   */
-  private static final HttpTextFormat.Setter<Request.Builder> OPENTELEMETRY_SETTER =
-      new HttpTextFormat.Setter<Request.Builder>() {
-        @Override
-        public void set(Request.Builder requestBuilder, String key, String value) {
-          requestBuilder.addHeader(key, value);
-        }
-      };
+  protected static final String DEFAULT_HTTP_SCHEME = "http";
 
   /**
    * HTTP Methods supported.
    */
-  public enum HttpMethods {
+  public enum HttpMethod {
     NONE,
     GET,
     PUT,
@@ -106,18 +81,6 @@ public class DaprHttp implements Closeable {
   }
 
   /**
-   * Defines the standard application/json type for HTTP calls in Dapr.
-   */
-  private static final MediaType MEDIA_TYPE_APPLICATION_JSON =
-      MediaType.get("application/json; charset=utf-8");
-
-  /**
-   * Shared object representing an empty request body in JSON.
-   */
-  private static final RequestBody REQUEST_BODY_EMPTY_JSON =
-      RequestBody.Companion.create("", MEDIA_TYPE_APPLICATION_JSON);
-
-  /**
    * Empty input or output.
    */
   private static final byte[] EMPTY_BYTES = new byte[0];
@@ -126,34 +89,6 @@ public class DaprHttp implements Closeable {
    * JSON Object Mapper.
    */
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
-  /**
-   * Hostname used to communicate to Dapr's HTTP endpoint.
-   */
-  private final String hostname;
-
-  /**
-   * Port used to communicate to Dapr's HTTP endpoint.
-   */
-  private final int port;
-
-  /**
-   * Http client used for all API calls.
-   */
-  private final OkHttpClient httpClient;
-
-  /**
-   * Creates a new instance of {@link DaprHttp}.
-   *
-   * @param hostname   Hostname for calling Dapr. (e.g. "127.0.0.1")
-   * @param port       Port for calling Dapr. (e.g. 3500)
-   * @param httpClient RestClient used for all API calls in this new instance.
-   */
-  DaprHttp(String hostname, int port, OkHttpClient httpClient) {
-    this.hostname = hostname;
-    this.port = port;
-    this.httpClient = httpClient;
-  }
 
   /**
    * Invokes an API asynchronously without payload that returns a text payload.
@@ -217,16 +152,7 @@ public class DaprHttp implements Closeable {
           byte[] content,
           Map<String, String> headers,
           Context context) {
-    return Mono.fromCallable(() -> doInvokeApi(method, urlString, urlParameters, content, headers, context));
-  }
-
-  /**
-   * Shutdown call is not necessary for OkHttpClient.
-   * @see OkHttpClient
-   */
-  @Override
-  public void close() throws IOException {
-    // No code needed
+    return invokeApi(HttpMethod.valueOf(method), urlString, urlParameters, content, headers, context);
   }
 
   /**
@@ -241,77 +167,11 @@ public class DaprHttp implements Closeable {
    * @return Response
    */
   @NotNull
-  private Response doInvokeApi(String method,
-                               String urlString,
-                               Map<String, String> urlParameters,
-                               byte[] content, Map<String, String> headers,
-                               Context context) throws IOException {
-    final String requestId = UUID.randomUUID().toString();
-    RequestBody body;
-
-    String contentType = headers != null ? headers.get("content-type") : null;
-    MediaType mediaType = contentType == null ? MEDIA_TYPE_APPLICATION_JSON : MediaType.get(contentType);
-    if (content == null) {
-      body = mediaType.equals(MEDIA_TYPE_APPLICATION_JSON)
-          ? REQUEST_BODY_EMPTY_JSON
-          : RequestBody.Companion.create(new byte[0], mediaType);
-    } else {
-      body = RequestBody.Companion.create(content, mediaType);
-    }
-    HttpUrl.Builder urlBuilder = new HttpUrl.Builder();
-    urlBuilder.scheme(DEFAULT_HTTP_SCHEME)
-        .host(this.hostname)
-        .port(this.port)
-        .addPathSegments(urlString);
-    Optional.ofNullable(urlParameters).orElse(Collections.emptyMap()).entrySet().stream()
-        .forEach(urlParameter -> urlBuilder.addQueryParameter(urlParameter.getKey(), urlParameter.getValue()));
-
-    Request.Builder requestBuilder = new Request.Builder()
-        .url(urlBuilder.build())
-        .addHeader(HEADER_DAPR_REQUEST_ID, requestId);
-    if (context != null) {
-      OpenTelemetry.getPropagators().getHttpTextFormat().inject(context, requestBuilder, OPENTELEMETRY_SETTER);
-    }
-    if (HttpMethods.GET.name().equals(method)) {
-      requestBuilder.get();
-    } else if (HttpMethods.DELETE.name().equals(method)) {
-      requestBuilder.delete();
-    } else {
-      requestBuilder.method(method, body);
-    }
-
-    String daprApiToken = Properties.API_TOKEN.get();
-    if (daprApiToken != null) {
-      requestBuilder.addHeader(Headers.DAPR_API_TOKEN, daprApiToken);
-    }
-
-    if (headers != null) {
-      Optional.ofNullable(headers.entrySet()).orElse(Collections.emptySet()).stream()
-          .forEach(header -> {
-            requestBuilder.addHeader(header.getKey(), header.getValue());
-          });
-    }
-
-    Request request = requestBuilder.build();
-
-    try (okhttp3.Response response = this.httpClient.newCall(request).execute()) {
-      if (!response.isSuccessful()) {
-        DaprError error = parseDaprError(getBodyBytesOrEmptyArray(response));
-        if ((error != null) && (error.getErrorCode() != null) && (error.getMessage() != null)) {
-          throw new DaprException(error);
-        }
-
-        throw new IllegalStateException("Unknown Dapr error. HTTP status code: " + response.code());
-      }
-
-      Map<String, String> mapHeaders = new HashMap<>();
-      byte[] result = getBodyBytesOrEmptyArray(response);
-      response.headers().forEach(pair -> {
-        mapHeaders.put(pair.getFirst(), pair.getSecond());
-      });
-      return new Response(result, mapHeaders, response.code());
-    }
-  }
+  protected abstract Mono<Response> invokeApi(HttpMethod method,
+                                              String urlString,
+                                              Map<String, String> urlParameters,
+                                              byte[] content, Map<String, String> headers,
+                                              Context context);
 
   /**
    * Tries to parse an error from Dapr response body.
@@ -319,20 +179,11 @@ public class DaprHttp implements Closeable {
    * @param json Response body from Dapr.
    * @return DaprError or null if could not parse.
    */
-  private static DaprError parseDaprError(byte[] json) throws IOException {
+  protected static DaprError parseDaprError(byte[] json) throws IOException {
     if ((json == null) || (json.length == 0)) {
       return null;
     }
     return OBJECT_MAPPER.readValue(json, DaprError.class);
-  }
-
-  private static byte[] getBodyBytesOrEmptyArray(okhttp3.Response response) throws IOException {
-    ResponseBody body = response.body();
-    if (body != null) {
-      return body.bytes();
-    }
-
-    return EMPTY_BYTES;
   }
 
 }

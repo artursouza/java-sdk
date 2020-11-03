@@ -15,7 +15,7 @@ public class DaprClientTestBuilder {
      * @param client DaprHttp used for http calls (can be mocked or stubbed)
      * @return New instance of DaprClient.
      */
-    public static DaprClient buildHttpClient(DaprHttp client) {
+    public static DaprClient buildHttpClient(DaprOkHttpClient client) {
         return new DaprClientHttp(client);
     }
 }

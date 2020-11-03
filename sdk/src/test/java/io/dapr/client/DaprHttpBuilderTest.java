@@ -25,7 +25,7 @@ public class DaprHttpBuilderTest {
 
 
   private static OkHttpClient getOkHttpClient(DaprHttp daprHttp) throws Exception {
-    Field httpClientField = DaprHttp.class.getDeclaredField("httpClient");
+    Field httpClientField = DaprOkHttpClient.class.getDeclaredField("httpClient");
     httpClientField.setAccessible(true);
     OkHttpClient okHttpClient = (OkHttpClient) httpClientField.get(daprHttp);
     assertNotNull(okHttpClient);

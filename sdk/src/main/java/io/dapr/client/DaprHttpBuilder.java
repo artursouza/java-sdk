@@ -7,6 +7,10 @@ package io.dapr.client;
 
 import io.dapr.config.Properties;
 import okhttp3.OkHttpClient;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
+import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
+import org.apache.http.nio.client.HttpAsyncClient;
 
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicReference;
@@ -22,9 +26,19 @@ public class DaprHttpBuilder {
   private static final AtomicReference<OkHttpClient> OK_HTTP_CLIENT = new AtomicReference<>();
 
   /**
+   * Singleton OkHttpClient.
+   */
+  private static final AtomicReference<HttpAsyncClient> APACHE_HTTP_CLIENT = new AtomicReference<>();
+
+  /**
    * Static lock object.
    */
   private static final Object LOCK = new Object();
+
+  /**
+   * Determines which HTTP client to use.
+   */
+  private final boolean async = "async".equalsIgnoreCase(Properties.HTTP_CLIENT.get());
 
   /**
    * Read timeout used to build object.
@@ -53,15 +67,19 @@ public class DaprHttpBuilder {
    * @throws IllegalStateException if any required field is missing
    */
   public DaprHttp build() {
-    return buildDaprHttp();
+    if (this.async) {
+      return buildApacheHttp();
+    }
+
+    return buildOkHttp();
   }
 
   /**
    * Creates and instance of the HTTP Client.
    *
-   * @return Instance of {@link DaprHttp}
+   * @return Instance of {@link DaprOkHttpClient}
    */
-  private DaprHttp buildDaprHttp() {
+  private DaprOkHttpClient buildOkHttp() {
     if (OK_HTTP_CLIENT.get() == null) {
       synchronized (LOCK) {
         if (OK_HTTP_CLIENT.get() == null) {
@@ -73,6 +91,27 @@ public class DaprHttpBuilder {
       }
     }
 
-    return new DaprHttp(Properties.SIDECAR_IP.get(), Properties.HTTP_PORT.get(), OK_HTTP_CLIENT.get());
+    return new DaprOkHttpClient(Properties.SIDECAR_IP.get(), Properties.HTTP_PORT.get(), OK_HTTP_CLIENT.get());
+  }
+
+  /**
+   * Creates and instance of the HTTP Client.
+   *
+   * @return Instance of {@link DaprApacheHttpClient}
+   */
+  private DaprApacheHttpClient buildApacheHttp() {
+    if (APACHE_HTTP_CLIENT.get() == null) {
+      synchronized (LOCK) {
+        if (APACHE_HTTP_CLIENT.get() == null) {
+          RequestConfig config = RequestConfig.custom()
+              .setSocketTimeout((int)this.readTimeout.toMillis()).build();
+          CloseableHttpAsyncClient client = HttpAsyncClientBuilder.create()
+              .setDefaultRequestConfig(config).build();
+          APACHE_HTTP_CLIENT.set(client);
+        }
+      }
+    }
+
+    return new DaprApacheHttpClient(Properties.SIDECAR_IP.get(), Properties.HTTP_PORT.get(), APACHE_HTTP_CLIENT.get());
   }
 }

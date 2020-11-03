@@ -132,7 +132,7 @@ public class DaprClientBuilder {
       throw new IllegalStateException("Invalid port.");
     }
     OkHttpClient okHttpClient = new OkHttpClient.Builder().build();
-    DaprHttp daprHttp = new DaprHttp(Properties.SIDECAR_IP.get(), port, okHttpClient);
+    DaprOkHttpClient daprHttp = new DaprOkHttpClient(Properties.SIDECAR_IP.get(), port, okHttpClient);
     return new DaprClientHttp(daprHttp, this.objectSerializer, this.stateSerializer);
   }
 }

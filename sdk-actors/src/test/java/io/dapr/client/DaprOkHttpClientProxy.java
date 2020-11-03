@@ -7,9 +7,9 @@ package io.dapr.client;
 
 import okhttp3.OkHttpClient;
 
-public class DaprHttpProxy extends io.dapr.client.DaprHttp {
+public class DaprOkHttpClientProxy extends DaprOkHttpClient {
 
-  public DaprHttpProxy(String hostname, int port, OkHttpClient httpClient) {
+  public DaprOkHttpClientProxy(String hostname, int port, OkHttpClient httpClient) {
     super(hostname, port, httpClient);
   }
 

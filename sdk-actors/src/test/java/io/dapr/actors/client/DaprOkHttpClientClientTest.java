@@ -4,8 +4,8 @@
  */
 package io.dapr.actors.client;
 
-import io.dapr.client.DaprHttp;
-import io.dapr.client.DaprHttpProxy;
+import io.dapr.client.DaprOkHttpClient;
+import io.dapr.client.DaprOkHttpClientProxy;
 import io.dapr.config.Properties;
 import okhttp3.OkHttpClient;
 import okhttp3.mock.Behavior;
@@ -17,7 +17,7 @@ import reactor.core.publisher.Mono;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 
-public class DaprHttpClientTest {
+public class DaprOkHttpClientClientTest {
 
   private DaprHttpClient DaprHttpClient;
 
@@ -35,11 +35,11 @@ public class DaprHttpClientTest {
 
   @Test
   public void invokeActorMethod() {
-    DaprHttp daprHttpMock = mock(DaprHttp.class);
+    DaprOkHttpClient daprHttpMock = mock(DaprOkHttpClient.class);
     mockInterceptor.addRule()
       .post("http://127.0.0.1:3000/v1.0/actors/DemoActor/1/method/Payment")
       .respond(EXPECTED_RESULT);
-    DaprHttp daprHttp = new DaprHttpProxy(Properties.SIDECAR_IP.get(), 3000, okHttpClient);
+    DaprOkHttpClient daprHttp = new DaprOkHttpClientProxy(Properties.SIDECAR_IP.get(), 3000, okHttpClient);
     DaprHttpClient = new DaprHttpClient(daprHttp);
     Mono<byte[]> mono =
       DaprHttpClient.invokeActorMethod("DemoActor", "1", "Payment", "".getBytes());

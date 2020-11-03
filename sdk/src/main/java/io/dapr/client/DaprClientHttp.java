@@ -42,7 +42,7 @@ import java.util.Optional;
 /**
  * An adapter for the HTTP Client.
  *
- * @see io.dapr.client.DaprHttp
+ * @see DaprOkHttpClient
  * @see io.dapr.client.DaprClient
  */
 public class DaprClientHttp extends AbstractDaprClient {
@@ -59,22 +59,22 @@ public class DaprClientHttp extends AbstractDaprClient {
   /**
    * Base path to invoke methods.
    */
-  public static final String INVOKE_PATH = DaprHttp.API_VERSION + "/invoke";
+  public static final String INVOKE_PATH = DaprOkHttpClient.API_VERSION + "/invoke";
 
   /**
    * Invoke Publish Path.
    */
-  public static final String PUBLISH_PATH = DaprHttp.API_VERSION + "/publish";
+  public static final String PUBLISH_PATH = DaprOkHttpClient.API_VERSION + "/publish";
 
   /**
    * Invoke Binding Path.
    */
-  public static final String BINDING_PATH = DaprHttp.API_VERSION + "/bindings";
+  public static final String BINDING_PATH = DaprOkHttpClient.API_VERSION + "/bindings";
 
   /**
    * State Path.
    */
-  public static final String STATE_PATH = DaprHttp.API_VERSION + "/state";
+  public static final String STATE_PATH = DaprOkHttpClient.API_VERSION + "/state";
 
   /**
    * String format for transaction API.
@@ -84,7 +84,7 @@ public class DaprClientHttp extends AbstractDaprClient {
   /**
    * Secrets Path.
    */
-  public static final String SECRETS_PATH = DaprHttp.API_VERSION + "/secrets";
+  public static final String SECRETS_PATH = DaprOkHttpClient.API_VERSION + "/secrets";
 
   /**
    * State Path format for bulk state API.
@@ -94,9 +94,9 @@ public class DaprClientHttp extends AbstractDaprClient {
   /**
    * The HTTP client to be used.
    *
-   * @see io.dapr.client.DaprHttp
+   * @see DaprOkHttpClient
    */
-  private final DaprHttp client;
+  private final DaprOkHttpClient client;
 
   /**
    * Flag determining if object serializer's input and output is Dapr's default instead of user provided.
@@ -117,7 +117,7 @@ public class DaprClientHttp extends AbstractDaprClient {
    * @see DaprClientBuilder
    * @see DefaultObjectSerializer
    */
-  DaprClientHttp(DaprHttp client, DaprObjectSerializer objectSerializer, DaprObjectSerializer stateSerializer) {
+  DaprClientHttp(DaprOkHttpClient client, DaprObjectSerializer objectSerializer, DaprObjectSerializer stateSerializer) {
     super(objectSerializer, stateSerializer);
     this.client = client;
     this.isObjectSerializerDefault = objectSerializer.getClass() == DefaultObjectSerializer.class;
@@ -131,7 +131,7 @@ public class DaprClientHttp extends AbstractDaprClient {
    * @see io.dapr.client.DaprClientBuilder
    * @see DefaultObjectSerializer
    */
-  DaprClientHttp(DaprHttp client) {
+  DaprClientHttp(DaprOkHttpClient client) {
     this(client, new DefaultObjectSerializer(), new DefaultObjectSerializer());
   }
 
@@ -156,7 +156,7 @@ public class DaprClientHttp extends AbstractDaprClient {
               .append("/").append(topic);
       byte[] serializedEvent = objectSerializer.serialize(data);
       return this.client.invokeApi(
-          DaprHttp.HttpMethods.POST.name(), url.toString(), null, serializedEvent, metadata, context)
+          DaprHttp.HttpMethod.POST.name(), url.toString(), null, serializedEvent, metadata, context)
           .thenReturn(new Response<>(context, null));
     } catch (Exception ex) {
       return Mono.error(ex);
@@ -187,7 +187,7 @@ public class DaprClientHttp extends AbstractDaprClient {
       }
       String path = String.format("%s/%s/method/%s", INVOKE_PATH, appId, method);
       byte[] serializedRequestBody = objectSerializer.serialize(request);
-      Mono<DaprHttp.Response> response = this.client.invokeApi(httMethod, path,
+      Mono<DaprOkHttpClient.Response> response = this.client.invokeApi(httMethod, path,
           httpExtension.getQueryString(), serializedRequestBody, metadata, context);
       return response.flatMap(r -> {
         try {
@@ -254,8 +254,8 @@ public class DaprClientHttp extends AbstractDaprClient {
       StringBuilder url = new StringBuilder(BINDING_PATH).append("/").append(name);
 
       byte[] payload = INTERNAL_SERIALIZER.serialize(jsonMap);
-      String httpMethod = DaprHttp.HttpMethods.POST.name();
-      Mono<DaprHttp.Response> response = this.client.invokeApi(
+      String httpMethod = DaprHttp.HttpMethod.POST.name();
+      Mono<DaprOkHttpClient.Response> response = this.client.invokeApi(
               httpMethod, url.toString(), null, payload, null, context);
       return response.flatMap(r -> {
         try {
@@ -302,7 +302,7 @@ public class DaprClientHttp extends AbstractDaprClient {
 
       byte[] requestBody = INTERNAL_SERIALIZER.serialize(jsonMap);
       return this.client
-          .invokeApi(DaprHttp.HttpMethods.POST.name(), url, null, requestBody, null, context)
+          .invokeApi(DaprHttp.HttpMethod.POST.name(), url, null, requestBody, null, context)
           .flatMap(s -> {
             try {
               return Mono.just(buildStates(s, type));
@@ -353,7 +353,7 @@ public class DaprClientHttp extends AbstractDaprClient {
       request.getMetadata().forEach(urlParameters::put);
 
       return this.client
-          .invokeApi(DaprHttp.HttpMethods.GET.name(), url.toString(), urlParameters, headers, context)
+          .invokeApi(DaprHttp.HttpMethod.GET.name(), url.toString(), urlParameters, headers, context)
           .flatMap(s -> {
             try {
               return Mono.just(buildState(s, key, options, type));
@@ -416,7 +416,7 @@ public class DaprClientHttp extends AbstractDaprClient {
       TransactionalStateRequest<Object> req = new TransactionalStateRequest<>(internalOperationObjects, metadata);
       byte[] serializedOperationBody = INTERNAL_SERIALIZER.serialize(req);
       return this.client.invokeApi(
-          DaprHttp.HttpMethods.POST.name(), url, null, serializedOperationBody, headers, context)
+          DaprHttp.HttpMethod.POST.name(), url, null, serializedOperationBody, headers, context)
           .thenReturn(new Response<>(context, null));
     } catch (IOException e) {
       return Mono.error(e);
@@ -465,7 +465,7 @@ public class DaprClientHttp extends AbstractDaprClient {
       }
       byte[] serializedStateBody = INTERNAL_SERIALIZER.serialize(internalStateObjects);
       return this.client.invokeApi(
-          DaprHttp.HttpMethods.POST.name(), url, null, serializedStateBody, headers, context)
+          DaprHttp.HttpMethod.POST.name(), url, null, serializedStateBody, headers, context)
           .thenReturn(new Response<>(context, null));
     } catch (Exception ex) {
       return Mono.error(ex);
@@ -502,7 +502,7 @@ public class DaprClientHttp extends AbstractDaprClient {
       request.getMetadata().forEach(urlParameters::put);
 
       return this.client.invokeApi(
-              DaprHttp.HttpMethods.DELETE.name(), url, urlParameters, headers, context)
+              DaprHttp.HttpMethod.DELETE.name(), url, urlParameters, headers, context)
           .thenReturn(new Response<>(context, null));
     } catch (Exception ex) {
       return Mono.error(ex);
@@ -540,7 +540,7 @@ public class DaprClientHttp extends AbstractDaprClient {
    * @throws IOException If there's a issue deserializing the response.
    */
   private <T> List<State<T>> buildStates(
-      DaprHttp.Response response, TypeRef<T> type) throws IOException {
+      DaprOkHttpClient.Response response, TypeRef<T> type) throws IOException {
     JsonNode root = INTERNAL_SERIALIZER.parseNode(response.getBody());
     List<State<T>> result = new ArrayList<>();
     for (Iterator<JsonNode> it = root.elements(); it.hasNext(); ) {
@@ -585,7 +585,7 @@ public class DaprClientHttp extends AbstractDaprClient {
 
     String url = SECRETS_PATH + "/" + secretStoreName + "/" + key;
     return this.client
-      .invokeApi(DaprHttp.HttpMethods.GET.name(), url, metadata, (String)null, null, context)
+      .invokeApi(DaprHttp.HttpMethod.GET.name(), url, metadata, (String)null, null, context)
       .flatMap(response -> {
         try {
           Map m =  INTERNAL_SERIALIZER.deserialize(response.getBody(), Map.class);

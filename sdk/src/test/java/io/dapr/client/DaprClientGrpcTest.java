@@ -423,7 +423,7 @@ public class DaprClientGrpcTest {
 
   @Test
   public void invokeServiceWithHttpExtensionTest() throws IOException {
-    HttpExtension httpExtension = new HttpExtension(DaprHttp.HttpMethods.GET, new HashMap<String, String>() {{
+    HttpExtension httpExtension = new HttpExtension(DaprHttp.HttpMethod.GET, new HashMap<String, String>() {{
       put("test", "1");
     }});
     CommonProtos.InvokeRequest message = CommonProtos.InvokeRequest.newBuilder()
