@@ -237,14 +237,6 @@ https://help.sonatype.com/repomanager3/user-interface/uploading-components
 
 ### Development
 
-#### Maven Module version management
-When releasing a new version of this SDK you must increase the version of all modules and pom files, so run the following commands:
-
-```sh
-mvn versions:set -DnewVersion="0.1.0-preview02"
-mvn versions:commit
-```
-
 #### Update proto files
 
 Change the properties below in [pom.xml](./pom.xml) to point to the desired reference URL in Git. Avoid pointing to master branch since it can change over time and create unpredictable behavior in the build.
