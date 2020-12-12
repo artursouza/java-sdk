@@ -18,10 +18,11 @@ import java.util.List;
 /**
  * 1. Build and install jars:
  * mvn clean install
- * 2. send a message to be saved as state:
- * dapr run --components-path ./components --dapr-http-port 3006 -- \
- * java -jar examples/target/dapr-java-sdk-examples-exec.jar \
- * io.dapr.examples.state.StateClient 'my message'
+ * 2. Go to examples directory:
+ * cd examples
+ * 3. send a message to be saved as state:
+ * dapr run --components-path ./components2 -- \
+ * java -jar target/dapr-java-sdk-examples-exec.jar io.dapr.examples.state.StateClient 'my message'
  */
 public class StateClient {
 
@@ -48,53 +49,29 @@ public class StateClient {
     try (DaprClient client = new DaprClientBuilder().build()) {
       String message = args.length == 0 ? " " : args[0];
 
-      MyClass myClass = new MyClass();
-      myClass.message = message;
+      MyClass firstState = new MyClass();
+      firstState.message = message;
       MyClass secondState = new MyClass();
       secondState.message = "test message";
 
-      client.saveState(STATE_STORE_NAME, FIRST_KEY_NAME, myClass).block();
-      System.out.println("Saving class with message: " + message);
+      client.saveState(STATE_STORE_NAME, FIRST_KEY_NAME, firstState).block();
+      System.out.println("Saving class with message: " + firstState.message);
+
+      client.saveState(STATE_STORE_NAME, SECOND_KEY_NAME, secondState).block();
+      System.out.println("Saving class with message: " + secondState.message);
 
       Mono<State<MyClass>> retrievedMessageMono = client.getState(STATE_STORE_NAME, FIRST_KEY_NAME, MyClass.class);
       System.out.println("Retrieved class message from state: " + (retrievedMessageMono.block().getValue()).message);
 
       System.out.println("Updating previous state and adding another state 'test state'... ");
-      myClass.message = message + " updated";
-      System.out.println("Saving updated class with message: " + myClass.message);
-
-      // execute transaction
-      List<TransactionalStateOperation<?>> operationList = new ArrayList<>();
-      operationList.add(new TransactionalStateOperation<>(TransactionalStateOperation.OperationType.UPSERT,
-              new State<>(myClass, FIRST_KEY_NAME, "")));
-      operationList.add(new TransactionalStateOperation<>(TransactionalStateOperation.OperationType.UPSERT,
-              new State<>(secondState, SECOND_KEY_NAME, "")));
-
-      client.executeTransaction(STATE_STORE_NAME, operationList).block();
+      firstState.message = message + " updated";
+      System.out.println("Saving updated class with message: " + firstState.message);
 
       // get multiple states
       Mono<List<State<MyClass>>> retrievedMessagesMono = client.getStates(STATE_STORE_NAME,
           Arrays.asList(FIRST_KEY_NAME, SECOND_KEY_NAME), MyClass.class);
       System.out.println("Retrieved messages using bulk get:");
       retrievedMessagesMono.block().forEach(System.out::println);
-
-      System.out.println("Deleting states...");
-
-      // delete state API
-      Mono<Void> mono = client.deleteState(STATE_STORE_NAME, FIRST_KEY_NAME);
-      mono.block();
-
-      // Delete operation using transaction API
-      operationList.clear();
-      operationList.add(new TransactionalStateOperation<>(TransactionalStateOperation.OperationType.DELETE,
-          new State<>(SECOND_KEY_NAME)));
-      mono = client.executeTransaction(STATE_STORE_NAME, operationList);
-      mono.block();
-
-      Mono<List<State<MyClass>>> retrievedDeletedMessageMono = client.getStates(STATE_STORE_NAME,
-          Arrays.asList(FIRST_KEY_NAME, SECOND_KEY_NAME), MyClass.class);
-      System.out.println("Trying to retrieve deleted states: ");
-      retrievedDeletedMessageMono.block().forEach(System.out::println);
 
       // This is an example, so for simplicity we are just exiting here.
       // Normally a dapr app would be a web service and not exit main.

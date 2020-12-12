@@ -1,0 +1,20 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: statestore
+auth:
+  secretStore: secretstore
+spec:
+  type: state.azure.cosmosdb
+  metadata:
+    - name: url
+      value: https://cosmosdb-asouza.documents.azure.com:443/
+    - name: masterKey
+      secretKeyRef:
+        name: "CosmosDB:Key"
+    - name: database
+      value: mydatabase
+    - name: collection
+      value: mycontainer
+    - name: actorStateStore
+      value: "true"
