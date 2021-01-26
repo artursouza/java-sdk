@@ -29,7 +29,7 @@ public class Publisher {
   private static final int NUM_MESSAGES = 10;
 
   //Time-to-live for messages published.
-  private static final String MESSAGE_TTL_IN_SECONDS = "1000";
+  private static final String MESSAGE_TTL_IN_SECONDS = "1";
 
   //The title of the topic to be used for publishing
   private static final String TOPIC_NAME = "testingtopic";
