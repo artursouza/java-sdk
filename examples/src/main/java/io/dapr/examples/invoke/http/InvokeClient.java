@@ -17,6 +17,13 @@ import io.dapr.client.DaprClient;
 import io.dapr.client.DaprClientBuilder;
 import io.dapr.client.domain.HttpExtension;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Instant;
+import java.util.concurrent.Executors;
+
 /**
  * 1. Build and install jars:
  * mvn clean install
@@ -38,16 +45,38 @@ public class InvokeClient {
    * @param args Messages to be sent as request for the invoke API.
    */
   public static void main(String[] args) throws Exception {
+    var executor = Executors.newFixedThreadPool(50);
     try (DaprClient client = (new DaprClientBuilder()).build()) {
-      for (String message : args) {
-        byte[] response = client.invokeMethod(SERVICE_APP_ID, "say", message, HttpExtension.POST, null,
-            byte[].class).block();
-        System.out.println(new String(response));
-      }
+      HttpClient httpClient = HttpClient.newHttpClient();
+      for (var i = 0; i < 50; i++) {
+        final String msg = "" + i;
+        final Integer key = i;
+        executor.execute(() -> {
+          var timestamp = Instant.now().toEpochMilli();
 
-      // This is an example, so for simplicity we are just exiting here.
-      // Normally a dapr app would be a web service and not exit main.
-      System.out.println("Done");
+          // use invokeMethod
+          if (args.length > 0) {
+            System.out.println(String.format("%d sdk client invoke started", timestamp));
+            client.invokeMethod(SERVICE_APP_ID, "say", "" + msg, HttpExtension.POST, null,
+                byte[].class).block();
+            timestamp = Instant.now().toEpochMilli();
+            System.out.println(String.format("%d sdk client invoke done", timestamp));
+          } else {
+            System.out.println(String.format("%d http client request started", timestamp));
+            HttpRequest request = HttpRequest.newBuilder()
+                .POST(HttpRequest.BodyPublishers.ofString("message"))
+                .uri(URI.create("http://localhost:3000/say"))
+                .build();
+            httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(HttpResponse::body)
+                .thenAccept(System.out::println)
+                .join();
+            timestamp = Instant.now().toEpochMilli();
+            System.out.println(String.format("%d http client request done", timestamp));
+          }
+        });
+
+      }
     }
   }
 }

@@ -63,8 +63,8 @@ public class DemoServiceController {
 
         // Handles the request by printing message.
         System.out.println("Server: " + message);
+        Thread.sleep(10000);
         System.out.println("@ " + utcNowAsString + " and metadata: " + metadataString);
-
         return message + " received";
       } catch (Exception e) {
         throw new RuntimeException(e);

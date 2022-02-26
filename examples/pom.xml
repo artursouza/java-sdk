@@ -18,9 +18,8 @@
   <properties>
     <protobuf.output.directory>${project.build.directory}/generated-sources</protobuf.output.directory>
     <protobuf.input.directory>${project.basedir}/proto</protobuf.input.directory>
-    <java.version>11</java.version>
-    <maven.compiler.source>${java.version}</maven.compiler.source>
-    <maven.compiler.target>${java.version}</maven.compiler.target>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
     <maven.deploy.skip>true</maven.deploy.skip>
     <spotbugs.fail>false</spotbugs.fail>
     <opentelemetry.version>0.14.0</opentelemetry.version>
