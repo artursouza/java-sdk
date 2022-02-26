@@ -18,21 +18,16 @@ import io.dapr.client.domain.Metadata;
 import io.dapr.config.Properties;
 import io.dapr.exceptions.DaprError;
 import io.dapr.exceptions.DaprException;
-import okhttp3.Call;
-import okhttp3.Callback;
 import okhttp3.HttpUrl;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.ResponseBody;
-import org.jetbrains.annotations.NotNull;
 import reactor.core.publisher.Mono;
 import reactor.util.context.Context;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -55,6 +50,11 @@ public class DaprHttp implements AutoCloseable {
    * Header used for request id in Dapr.
    */
   private static final String HEADER_DAPR_REQUEST_ID = "X-DaprRequestId";
+
+  /**
+   * Header for Content-Type.
+   */
+  private static final String HEADER_CONTENT_TYPE = "Content-Type";
 
   /**
    * Dapr's http default scheme.
@@ -116,14 +116,7 @@ public class DaprHttp implements AutoCloseable {
   /**
    * Defines the standard application/json type for HTTP calls in Dapr.
    */
-  private static final MediaType MEDIA_TYPE_APPLICATION_JSON =
-      MediaType.get("application/json; charset=utf-8");
-
-  /**
-   * Shared object representing an empty request body in JSON.
-   */
-  private static final RequestBody REQUEST_BODY_EMPTY_JSON =
-      RequestBody.Companion.create("", MEDIA_TYPE_APPLICATION_JSON);
+  private static final String CONTENT_TYPE_APPLICATION_JSON = "application/json; charset=utf-8";
 
   /**
    * Empty input or output.
@@ -148,19 +141,26 @@ public class DaprHttp implements AutoCloseable {
   /**
    * Http client used for all API calls.
    */
-  private final OkHttpClient httpClient;
+  private final HttpClient httpClient;
+
+  /**
+   *  Timeout duration per HTTP request.
+   */
+  private final Duration timeout;
 
   /**
    * Creates a new instance of {@link DaprHttp}.
    *
    * @param hostname   Hostname for calling Dapr. (e.g. "127.0.0.1")
    * @param port       Port for calling Dapr. (e.g. 3500)
-   * @param httpClient RestClient used for all API calls in this new instance.
+   * @param httpClient HTTPClient used for all API calls in this new instance.
+   * @param timeout    Timeout duration per HTTP request.
    */
-  DaprHttp(String hostname, int port, OkHttpClient httpClient) {
+  DaprHttp(String hostname, int port, HttpClient httpClient, Duration timeout) {
     this.hostname = hostname;
     this.port = port;
     this.httpClient = httpClient;
+    this.timeout = timeout;
   }
 
   /**
@@ -231,8 +231,8 @@ public class DaprHttp implements AutoCloseable {
   }
 
   /**
-   * Shutdown call is not necessary for OkHttpClient.
-   * @see OkHttpClient
+   * Shutdown call is not necessary for HttpClient.
+   * @see HttpClient
    */
   @Override
   public void close() {
@@ -256,16 +256,16 @@ public class DaprHttp implements AutoCloseable {
                                byte[] content, Map<String, String> headers,
                                Context context) {
     final String requestId = UUID.randomUUID().toString();
-    RequestBody body;
+    HttpRequest.BodyPublisher bodyPublisher;
 
     String contentType = headers != null ? headers.get(Metadata.CONTENT_TYPE) : null;
-    MediaType mediaType = contentType == null ? MEDIA_TYPE_APPLICATION_JSON : MediaType.get(contentType);
+    if ((contentType == null) || contentType.isBlank()) {
+      contentType = CONTENT_TYPE_APPLICATION_JSON;
+    }
     if (content == null) {
-      body = mediaType.equals(MEDIA_TYPE_APPLICATION_JSON)
-          ? REQUEST_BODY_EMPTY_JSON
-          : RequestBody.Companion.create(new byte[0], mediaType);
+      bodyPublisher = HttpRequest.BodyPublishers.noBody();
     } else {
-      body = RequestBody.Companion.create(content, mediaType);
+      bodyPublisher = HttpRequest.BodyPublishers.ofByteArray(content);
     }
     HttpUrl.Builder urlBuilder = new HttpUrl.Builder();
     urlBuilder.scheme(DEFAULT_HTTP_SCHEME)
@@ -280,40 +280,63 @@ public class DaprHttp implements AutoCloseable {
               .forEach(urlParameterValue ->
                   urlBuilder.addQueryParameter(urlParameter.getKey(), urlParameterValue)));
 
-    Request.Builder requestBuilder = new Request.Builder()
-        .url(urlBuilder.build())
-        .addHeader(HEADER_DAPR_REQUEST_ID, requestId);
+    HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
+        .uri(urlBuilder.build().uri())
+        .header(HEADER_DAPR_REQUEST_ID, requestId)
+        .header(HEADER_CONTENT_TYPE, contentType);
     if (context != null) {
       context.stream()
           .filter(entry -> ALLOWED_CONTEXT_IN_HEADERS.contains(entry.getKey().toString().toLowerCase()))
-          .forEach(entry -> requestBuilder.addHeader(entry.getKey().toString(), entry.getValue().toString()));
+          .forEach(entry -> requestBuilder.header(entry.getKey().toString(), entry.getValue().toString()));
     }
     if (HttpMethods.GET.name().equals(method)) {
-      requestBuilder.get();
+      requestBuilder.GET();
     } else if (HttpMethods.DELETE.name().equals(method)) {
-      requestBuilder.delete();
+      requestBuilder.DELETE();
     } else {
-      requestBuilder.method(method, body);
+      requestBuilder.method(method, bodyPublisher);
     }
 
     String daprApiToken = Properties.API_TOKEN.get();
     if (daprApiToken != null) {
-      requestBuilder.addHeader(Headers.DAPR_API_TOKEN, daprApiToken);
+      requestBuilder.header(Headers.DAPR_API_TOKEN, daprApiToken);
     }
 
     if (headers != null) {
       Optional.ofNullable(headers.entrySet()).orElse(Collections.emptySet()).stream()
           .forEach(header -> {
-            requestBuilder.addHeader(header.getKey(), header.getValue());
+            requestBuilder.setHeader(header.getKey(), header.getValue());
           });
     }
 
-    Request request = requestBuilder.build();
+    requestBuilder.timeout(this.timeout);
+    HttpRequest request = requestBuilder.build();
 
 
-    CompletableFuture<Response> future = new CompletableFuture<>();
-    this.httpClient.newCall(request).enqueue(new ResponseFutureCallback(future));
-    return future;
+    return this.httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofByteArray())
+        .thenApply(bytesHttpResponse -> {
+          int statusCode = bytesHttpResponse.statusCode();
+          if ((statusCode < 200) || (statusCode > 299)) {
+            DaprError error = parseDaprError(getBodyBytesOrEmptyArray(bytesHttpResponse));
+            if ((error != null) && (error.getErrorCode() != null)) {
+              if (error.getMessage() != null) {
+                throw new DaprException(error);
+              } else {
+                throw new DaprException(error.getErrorCode(), "HTTP status code: " + statusCode);
+              }
+            }
+
+            throw new DaprException("UNKNOWN", "HTTP status code: " + statusCode);
+          }
+
+          Map<String, String> mapHeaders = new HashMap<>();
+          byte[] result = getBodyBytesOrEmptyArray(bytesHttpResponse);
+          bytesHttpResponse.headers().map().entrySet().forEach(pair -> {
+            mapHeaders.put(pair.getKey(), String.join(",", pair.getValue()));
+          });
+
+          return new Response(result, mapHeaders, statusCode);
+        });
   }
 
   /**
@@ -334,60 +357,13 @@ public class DaprHttp implements AutoCloseable {
     }
   }
 
-  private static byte[] getBodyBytesOrEmptyArray(okhttp3.Response response) throws IOException {
-    ResponseBody body = response.body();
+  private static byte[] getBodyBytesOrEmptyArray(HttpResponse<byte[]> response) {
+    byte[] body = response.body();
     if (body != null) {
-      return body.bytes();
+      return body;
     }
 
     return EMPTY_BYTES;
-  }
-
-  /**
-   * Converts the okhttp3 response into the response object expected internally by the SDK.
-   */
-  private static class ResponseFutureCallback implements Callback {
-    private final CompletableFuture<Response> future;
-
-    public ResponseFutureCallback(CompletableFuture<Response> future) {
-      this.future = future;
-    }
-
-    @Override
-    public void onFailure(Call call, IOException e) {
-      future.completeExceptionally(e);
-    }
-
-    @Override
-    public void onResponse(@NotNull Call call, @NotNull okhttp3.Response response) throws IOException {
-      if (!response.isSuccessful()) {
-        try {
-          DaprError error = parseDaprError(getBodyBytesOrEmptyArray(response));
-          if ((error != null) && (error.getErrorCode() != null)) {
-            if (error.getMessage() != null) {
-              future.completeExceptionally(new DaprException(error));
-            } else {
-              future.completeExceptionally(
-                  new DaprException(error.getErrorCode(), "HTTP status code: " + response.code()));
-            }
-            return;
-          }
-
-          future.completeExceptionally(new DaprException("UNKNOWN", "HTTP status code: " + response.code()));
-          return;
-        } catch (DaprException e) {
-          future.completeExceptionally(e);
-          return;
-        }
-      }
-
-      Map<String, String> mapHeaders = new HashMap<>();
-      byte[] result = getBodyBytesOrEmptyArray(response);
-      response.headers().forEach(pair -> {
-        mapHeaders.put(pair.getFirst(), pair.getSecond());
-      });
-      future.complete(new Response(result, mapHeaders, response.code()));
-    }
   }
 
 }

@@ -14,8 +14,8 @@ limitations under the License.
 package io.dapr.client;
 
 import io.dapr.config.Properties;
-import okhttp3.OkHttpClient;
 
+import java.net.http.HttpClient;
 import java.time.Duration;
 
 /**
@@ -26,7 +26,7 @@ public class DaprHttpBuilder {
   /**
    * Singleton OkHttpClient.
    */
-  private static volatile OkHttpClient OK_HTTP_CLIENT;
+  private static volatile HttpClient HTTP_CLIENT;
 
   /**
    * Static lock object.
@@ -49,17 +49,15 @@ public class DaprHttpBuilder {
    * @return Instance of {@link DaprHttp}
    */
   private DaprHttp buildDaprHttp() {
-    if (OK_HTTP_CLIENT == null) {
+    if (HTTP_CLIENT == null) {
       synchronized (LOCK) {
-        if (OK_HTTP_CLIENT == null) {
-          OkHttpClient.Builder builder = new OkHttpClient.Builder();
-          Duration readTimeout = Duration.ofSeconds(Properties.HTTP_CLIENT_READ_TIMEOUT_SECONDS.get());
-          builder.readTimeout(readTimeout);
-          OK_HTTP_CLIENT = builder.build();
+        if (HTTP_CLIENT == null) {
+          HTTP_CLIENT = HttpClient.newBuilder().build();
         }
       }
     }
 
-    return new DaprHttp(Properties.SIDECAR_IP.get(), Properties.HTTP_PORT.get(), OK_HTTP_CLIENT);
+    Duration timeout = Duration.ofSeconds(Properties.HTTP_CLIENT_READ_TIMEOUT_SECONDS.get());
+    return new DaprHttp(Properties.SIDECAR_IP.get(), Properties.HTTP_PORT.get(), HTTP_CLIENT, timeout);
   }
 }
