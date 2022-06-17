@@ -13,7 +13,8 @@ limitations under the License.
 
 package io.dapr.client;
 
-import io.dapr.serializer.DaprObjectSerializer;
+import io.dapr.serialization.MimeType;
+import io.dapr.serialization.DaprObjectSerializer;
 import org.junit.Test;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -25,8 +26,9 @@ public class DaprClientBuilderTest {
   @Test
   public void build() {
     DaprObjectSerializer objectSerializer = mock(DaprObjectSerializer.class);
-    when(objectSerializer.getContentType()).thenReturn("application/json");
     DaprObjectSerializer stateSerializer = mock(DaprObjectSerializer.class);
+    when(objectSerializer.getContentType()).thenReturn(MimeType.APPLICATION_JSON);
+    when(stateSerializer.getContentType()).thenReturn(MimeType.APPLICATION_JSON);
     DaprClientBuilder daprClientBuilder = new DaprClientBuilder();
     daprClientBuilder.withObjectSerializer(objectSerializer);
     daprClientBuilder.withStateSerializer(stateSerializer);
@@ -36,7 +38,7 @@ public class DaprClientBuilderTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void noObjectSerializer() {
-    new DaprClientBuilder().withObjectSerializer(null);
+    new DaprClientBuilder().withObjectSerializer((DaprObjectSerializer) null);
   }
 
   @Test(expected = IllegalArgumentException.class)
@@ -46,7 +48,7 @@ public class DaprClientBuilderTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void noStateSerializer() {
-    new DaprClientBuilder().withStateSerializer(null);
+    new DaprClientBuilder().withStateSerializer((DaprObjectSerializer) null);
   }
 
 }

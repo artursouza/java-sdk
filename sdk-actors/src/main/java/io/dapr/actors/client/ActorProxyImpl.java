@@ -16,7 +16,7 @@ package io.dapr.actors.client;
 import io.dapr.actors.ActorId;
 import io.dapr.actors.ActorMethod;
 import io.dapr.exceptions.DaprException;
-import io.dapr.serializer.DaprObjectSerializer;
+import io.dapr.serialization.DaprObjectSerializer;
 import io.dapr.utils.TypeRef;
 import reactor.core.publisher.Mono;
 

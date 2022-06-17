@@ -15,8 +15,8 @@ package io.dapr.actors.client;
 
 import io.dapr.actors.ActorId;
 import io.dapr.actors.ActorUtils;
-import io.dapr.serializer.DaprObjectSerializer;
-import io.dapr.serializer.DefaultObjectSerializer;
+import io.dapr.serialization.DaprObjectSerializer;
+import io.dapr.serialization.DefaultObjectSerializer;
 
 import java.lang.reflect.Proxy;
 

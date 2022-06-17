@@ -18,8 +18,9 @@ import io.dapr.actors.ActorTrace;
 import io.dapr.client.DaprApiProtocol;
 import io.dapr.client.DaprHttpBuilder;
 import io.dapr.config.Properties;
-import io.dapr.serializer.DaprObjectSerializer;
-import io.dapr.serializer.DefaultObjectSerializer;
+import io.dapr.serialization.DaprObjectSerializer;
+import io.dapr.serialization.DefaultObjectSerializer;
+import io.dapr.serializer.AdaptedDaprObjectSerializer;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import reactor.core.publisher.Mono;
@@ -182,8 +183,24 @@ public class ActorRuntime implements Closeable {
    * @param <T>              Actor class type.
    */
   public <T extends AbstractActor> void registerActor(
-        Class<T> clazz, DaprObjectSerializer objectSerializer, DaprObjectSerializer stateSerializer) {
+      Class<T> clazz, DaprObjectSerializer objectSerializer, DaprObjectSerializer stateSerializer) {
     registerActor(clazz,  new DefaultActorFactory<T>(), objectSerializer, stateSerializer);
+  }
+
+  /**
+   * Registers an actor with the runtime, using deprecated serializer for backwards compatibility.
+   *
+   * @param clazz            The type of actor.
+   * @param objectSerializer Serializer for Actor's request and response objects.
+   * @param stateSerializer  Serializer for Actor's state objects.
+   * @param <T>              Actor class type.
+   */
+  @Deprecated
+  public <T extends AbstractActor> void registerActor(
+      Class<T> clazz,
+      io.dapr.serializer.DaprObjectSerializer objectSerializer,
+      io.dapr.serializer.DaprObjectSerializer stateSerializer) {
+    registerActor(clazz, new DefaultActorFactory<T>(), objectSerializer, stateSerializer);
   }
 
   /**
@@ -226,6 +243,27 @@ public class ActorRuntime implements Closeable {
       this.config.addRegisteredActorType(actorTypeInfo.getName());
       return new ActorManager<T>(context);
     });
+  }
+
+  /**
+   * Registers an actor with the runtime, using deprecated serializers for backwards compatibility.
+   *
+   * @param clazz            The type of actor.
+   * @param actorFactory     An optional factory to create actors. This can be used for dependency injection.
+   * @param objectSerializer Serializer for Actor's request and response objects.
+   * @param stateSerializer  Serializer for Actor's state objects.
+   * @param <T>              Actor class type.
+   */
+  @Deprecated
+  public <T extends AbstractActor> void registerActor(
+      Class<T> clazz, ActorFactory<T> actorFactory,
+      io.dapr.serializer.DaprObjectSerializer objectSerializer,
+      io.dapr.serializer.DaprObjectSerializer stateSerializer) {
+    this.registerActor(
+        clazz,
+        actorFactory,
+        new AdaptedDaprObjectSerializer(objectSerializer),
+        new AdaptedDaprObjectSerializer(stateSerializer));
   }
 
   /**

@@ -13,9 +13,10 @@ limitations under the License.
 
 package io.dapr.it.state;
 
+import java.io.Serializable;
 import java.util.Objects;
 
-public class MyData {
+public class MyData implements Serializable {
 
   /// Gets or sets the value for PropertyA.
   private String propertyA;

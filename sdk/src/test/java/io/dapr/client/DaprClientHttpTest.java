@@ -15,6 +15,7 @@ package io.dapr.client;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import io.dapr.serialization.MimeType;
 import io.dapr.client.domain.DeleteStateRequest;
 import io.dapr.client.domain.GetBulkStateRequest;
 import io.dapr.client.domain.GetStateRequest;
@@ -26,7 +27,7 @@ import io.dapr.client.domain.StateOptions;
 import io.dapr.client.domain.TransactionalStateOperation;
 import io.dapr.config.Properties;
 import io.dapr.exceptions.DaprException;
-import io.dapr.serializer.DaprObjectSerializer;
+import io.dapr.serialization.DaprObjectSerializer;
 import io.dapr.utils.TypeRef;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -929,10 +930,9 @@ public class DaprClientHttpTest {
   public void simpleExecuteTransactionXMLData() {
     mockInterceptor.addRule()
         .post("http://127.0.0.1:3000/v1.0/state/MyStateStore/transaction")
-        .matches(new BodyMatcher("{\"operations\":[{\"operation\":\"upsert\"," +
-            "\"request\":{\"value\":\"PFN0cmluZz5teSBkYXRhPC9TdHJpbmc+\",\"key\":\"key1\",\"etag\":\"ETag1\"," +
-            "\"options\":{}}},{\"operation\":\"delete\",\"request\":{\"value\":\"PG51bGwvPg==\"," +
-            "\"key\":\"deleteKey\"}}]}"))
+        .matches(new BodyMatcher("{\"operations\":[{\"operation\":\"upsert\",\"request\":{\"value\":\"<String>my " +
+            "data</String>\",\"key\":\"key1\",\"etag\":\"ETag1\",\"options\":{}}},{\"operation\":\"delete\"," +
+            "\"request\":{\"value\":\"\",\"key\":\"deleteKey\"}}]}"))
         .respond(EXPECTED_RESULT);
     String etag = "ETag1";
     String key = "key1";
@@ -1362,6 +1362,9 @@ public class DaprClientHttpTest {
 
     @Override
     public byte[] serialize(Object o) throws IOException {
+      if (o == null) {
+        return new byte[0];
+      }
       return XML_MAPPER.writeValueAsBytes(o);
     }
 
@@ -1371,8 +1374,8 @@ public class DaprClientHttpTest {
     }
 
     @Override
-    public String getContentType() {
-      return "application/xml";
+    public MimeType getContentType() {
+      return MimeType.APPLICATION_XML;
     }
   }
 

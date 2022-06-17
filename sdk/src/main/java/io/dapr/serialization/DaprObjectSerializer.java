@@ -11,7 +11,7 @@
 limitations under the License.
 */
 
-package io.dapr.serializer;
+package io.dapr.serialization;
 
 import io.dapr.utils.TypeRef;
 
@@ -19,14 +19,11 @@ import java.io.IOException;
 
 /**
  * Serializes and deserializes application's objects.
- * Deprecated.
- * Use {@link io.dapr.serialization.DaprObjectSerializer} instead.
  */
-@Deprecated
 public interface DaprObjectSerializer {
 
   /**
-   * Serializes the given object as byte[].
+   * Serializes the given object as byte array.
    *
    * @param o Object to be serialized.
    * @return Serialized object.
@@ -35,7 +32,7 @@ public interface DaprObjectSerializer {
   byte[] serialize(Object o) throws IOException;
 
   /**
-   * Deserializes the given byte[] into a object.
+   * Deserializes the given byte array into an object.
    *
    * @param data Data to be deserialized.
    * @param type Type of object to be deserialized.
@@ -46,9 +43,9 @@ public interface DaprObjectSerializer {
   <T> T deserialize(byte[] data, TypeRef<T> type) throws IOException;
 
   /**
-   * Returns the content type of the request.
-   * 
-   * @return content type of the request
+   * Returns the mime type for this serializer.
+   *
+   * @return mimeType of the serializer.
    */
-  String getContentType();
+  MimeType getContentType();
 }

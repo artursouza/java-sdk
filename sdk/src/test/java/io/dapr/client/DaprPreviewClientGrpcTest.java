@@ -24,7 +24,7 @@ import io.dapr.client.domain.QueryStateRequest;
 import io.dapr.client.domain.QueryStateResponse;
 import io.dapr.client.domain.SubscribeConfigurationRequest;
 import io.dapr.client.domain.query.Query;
-import io.dapr.serializer.DefaultObjectSerializer;
+import io.dapr.serialization.DefaultObjectSerializer;
 import io.dapr.v1.CommonProtos;
 import io.dapr.v1.DaprGrpc;
 import io.dapr.v1.DaprProtos;

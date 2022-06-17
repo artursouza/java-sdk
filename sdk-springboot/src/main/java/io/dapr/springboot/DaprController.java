@@ -15,7 +15,7 @@ package io.dapr.springboot;
 
 
 import io.dapr.actors.runtime.ActorRuntime;
-import io.dapr.serializer.DefaultObjectSerializer;
+import io.dapr.serialization.DefaultObjectSerializer;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;

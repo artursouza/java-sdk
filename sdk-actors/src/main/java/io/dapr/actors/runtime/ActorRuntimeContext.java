@@ -14,7 +14,7 @@ limitations under the License.
 package io.dapr.actors.runtime;
 
 import io.dapr.actors.ActorTrace;
-import io.dapr.serializer.DaprObjectSerializer;
+import io.dapr.serialization.DaprObjectSerializer;
 
 /**
  * Provides the context for the Actor's runtime.

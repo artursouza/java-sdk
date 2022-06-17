@@ -40,7 +40,7 @@ import io.dapr.client.domain.TransactionalStateOperation;
 import io.dapr.config.Properties;
 import io.dapr.exceptions.DaprException;
 import io.dapr.internal.opencensus.GrpcWrapper;
-import io.dapr.serializer.DaprObjectSerializer;
+import io.dapr.serialization.DaprObjectSerializer;
 import io.dapr.utils.NetworkUtils;
 import io.dapr.utils.TypeRef;
 import io.dapr.v1.CommonProtos;
@@ -160,7 +160,7 @@ public class DaprClientGrpc extends AbstractDaprClient {
       // It allows CloudEvents to be handled differently, for example.
       String contentType = request.getContentType();
       if (contentType == null || contentType.isEmpty()) {
-        contentType = objectSerializer.getContentType();
+        contentType = objectSerializer.getContentType().toString();
       }
       envelopeBuilder.setDataContentType(contentType);
 
@@ -578,7 +578,7 @@ public class DaprClientGrpc extends AbstractDaprClient {
         .setQuerystring(httpExtension.encodeQueryString());
     requestBuilder.setHttpExtension(httpExtensionBuilder.build());
 
-    requestBuilder.setContentType(objectSerializer.getContentType());
+    requestBuilder.setContentType(objectSerializer.getContentType().toString());
 
     DaprProtos.InvokeServiceRequest.Builder envelopeBuilder = DaprProtos.InvokeServiceRequest.newBuilder()
         .setId(appId)

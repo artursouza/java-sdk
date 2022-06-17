@@ -16,8 +16,8 @@ package io.dapr.actors.runtime;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.dapr.actors.ActorId;
 import io.dapr.config.Properties;
-import io.dapr.serializer.DaprObjectSerializer;
-import io.dapr.serializer.DefaultObjectSerializer;
+import io.dapr.serialization.DaprObjectSerializer;
+import io.dapr.serialization.DefaultObjectSerializer;
 import io.dapr.utils.TypeRef;
 import reactor.core.publisher.Mono;
 

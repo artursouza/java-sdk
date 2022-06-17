@@ -13,6 +13,9 @@ limitations under the License.
 
 package io.dapr.client;
 
+import io.dapr.serialization.DaprObjectSerializer;
+import io.dapr.serializer.AdaptedDaprObjectSerializer;
+
 /**
  * Builder for DaprClient used in tests only.
  */
@@ -20,10 +23,33 @@ public class DaprClientTestBuilder {
 
     /**
      * Builds a DaprClient.
-     * @param client DaprHttp used for http calls (can be mocked or stubbed)
+     * @param client DaprHttp used for http calls (can be mocked or stubbed).
      * @return New instance of DaprClient.
      */
     public static DaprClient buildHttpClient(DaprHttp client) {
         return new DaprClientHttp(client);
+    }
+
+    /**
+     * Builds a DaprClient with a custom serializer.
+     * @param client DaprHttp used for http calls (can be mocked or stubbed).
+     * @param serializer Custom serializer for objects and state.
+     * @return New instance of DaprClient.
+     */
+    public static DaprClient buildHttpClient(DaprHttp client, DaprObjectSerializer serializer) {
+        return new DaprClientHttp(client, serializer, serializer);
+    }
+
+    /**
+     * Builds a DaprClient with a custom deprecated serializer.
+     * @param client DaprHttp used for http calls (can be mocked or stubbed).
+     * @param serializer Custom serializer for objects and state.
+     * @return New instance of DaprClient.
+     */
+    public static DaprClient buildHttpClient(DaprHttp client, io.dapr.serializer.DaprObjectSerializer serializer) {
+        return new DaprClientHttp(
+            client,
+            new AdaptedDaprObjectSerializer(serializer),
+            new AdaptedDaprObjectSerializer(serializer));
     }
 }

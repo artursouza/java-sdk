@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Dapr Authors
+ * Copyright 2022 The Dapr Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -11,35 +11,28 @@
 limitations under the License.
 */
 
-package io.dapr.actors.runtime;
+package io.dapr.it.state;
 
 import io.dapr.serialization.DaprObjectSerializer;
+import io.dapr.serialization.DefaultObjectSerializer;
 import io.dapr.serialization.MimeType;
 import io.dapr.utils.TypeRef;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 
 /**
- * Class used to test different serializer implementations.
+ * Emulates a custom JSON serializer to validate the SDK behaves the way as with the default serializer.
  */
-public class JavaSerializer implements DaprObjectSerializer {
+class CustomJsonSerializer implements DaprObjectSerializer {
+
+  private static final DaprObjectSerializer DEFAULT_SERIALIZER = new DefaultObjectSerializer();
 
   /**
    * {@inheritDoc}
    */
   @Override
   public byte[] serialize(Object o) throws IOException {
-    try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-      try (ObjectOutputStream oos = new ObjectOutputStream(bos)) {
-        oos.writeObject(o);
-        oos.flush();
-        return bos.toByteArray();
-      }
-    }
+    return DEFAULT_SERIALIZER.serialize(o);
   }
 
   /**
@@ -47,15 +40,7 @@ public class JavaSerializer implements DaprObjectSerializer {
    */
   @Override
   public <T> T deserialize(byte[] data, TypeRef<T> type) throws IOException {
-    try (ByteArrayInputStream bis = new ByteArrayInputStream(data)) {
-      try (ObjectInputStream ois = new ObjectInputStream(bis)) {
-        try {
-          return (T) ois.readObject();
-        } catch (Exception e) {
-          throw new IOException("Could not deserialize Java object.", e);
-        }
-      }
-    }
+    return DEFAULT_SERIALIZER.deserialize(data, type);
   }
 
   /**
@@ -63,6 +48,6 @@ public class JavaSerializer implements DaprObjectSerializer {
    */
   @Override
   public MimeType getContentType() {
-    return MimeType.APPLICATION_JSON;
+    return DEFAULT_SERIALIZER.getContentType();
   }
 }

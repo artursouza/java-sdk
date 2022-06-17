@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Dapr Authors
+ * Copyright 2022 The Dapr Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -11,27 +11,33 @@
 limitations under the License.
 */
 
-package io.dapr.serializer;
+package io.dapr.it.state;
 
-import io.dapr.client.ObjectSerializer;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.ion.IonFactory;
+import io.dapr.serializer.DaprObjectSerializer;
 import io.dapr.utils.TypeRef;
 
 import java.io.IOException;
 
 /**
- * Default serializer/deserializer for request/response objects and for state objects too.
- * Deprecated.
- * Use {@link io.dapr.serialization.DefaultObjectSerializer} instead.
+ * Emulates a custom ION serializer to validate the SDK behaves the way as with the default serializer.
  */
-@Deprecated
-public class DefaultObjectSerializer extends ObjectSerializer implements DaprObjectSerializer {
+class DeprecatedCustomIonSerializer implements DaprObjectSerializer {
+
+  private static final ObjectMapper MAPPER = new ObjectMapper(new IonFactory())
+      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
   /**
    * {@inheritDoc}
    */
   @Override
   public byte[] serialize(Object o) throws IOException {
-    return super.serialize(o);
+    if (o == null) {
+      return new byte[0];
+    }
+    return MAPPER.writeValueAsBytes(o);
   }
 
   /**
@@ -39,7 +45,10 @@ public class DefaultObjectSerializer extends ObjectSerializer implements DaprObj
    */
   @Override
   public <T> T deserialize(byte[] data, TypeRef<T> type) throws IOException {
-    return super.deserialize(data, type);
+    if ((data == null) || (data.length == 0)) {
+      return null;
+    }
+    return MAPPER.readValue(data, MAPPER.constructType(type.getType()));
   }
 
   /**
@@ -47,6 +56,7 @@ public class DefaultObjectSerializer extends ObjectSerializer implements DaprObj
    */
   @Override
   public String getContentType() {
-    return "application/json";
+    return "application/ion";
   }
+
 }

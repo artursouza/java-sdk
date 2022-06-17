@@ -14,13 +14,17 @@ limitations under the License.
 package io.dapr.client;
 
 import io.dapr.config.Properties;
-import io.dapr.serializer.DaprObjectSerializer;
-import io.dapr.serializer.DefaultObjectSerializer;
+import io.dapr.serialization.DaprObjectSerializer;
+import io.dapr.serialization.DefaultObjectSerializer;
+import io.dapr.serialization.MimeType;
+import io.dapr.serializer.AdaptedDaprObjectSerializer;
+import io.dapr.utils.TypeRef;
 import io.dapr.v1.DaprGrpc;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
 import java.io.Closeable;
+import java.io.IOException;
 
 /**
  * A builder for the DaprClient,
@@ -88,6 +92,27 @@ public class DaprClientBuilder {
   }
 
   /**
+   * For backwards compatibility, accepts a deprecated instance of DaprObjectSerializer.
+   * Use {@link DaprObjectSerializer} instead.
+   *
+   * @param objectSerializer Serializer for objects to be sent and received from Dapr.
+   * @return This instance.
+   */
+  @Deprecated
+  public DaprClientBuilder withObjectSerializer(final io.dapr.serializer.DaprObjectSerializer objectSerializer) {
+    if (objectSerializer == null) {
+      throw new IllegalArgumentException("Object serializer is required");
+    }
+
+    if (objectSerializer.getContentType() == null || objectSerializer.getContentType().isEmpty()) {
+      throw new IllegalArgumentException("Content Type should not be null or empty");
+    }
+
+    this.objectSerializer = new AdaptedDaprObjectSerializer(objectSerializer);
+    return this;
+  }
+
+  /**
    * Sets the serializer for objects to be persisted.
    * See {@link DefaultObjectSerializer} as possible serializer for non-production scenarios.
    *
@@ -100,6 +125,23 @@ public class DaprClientBuilder {
     }
 
     this.stateSerializer = stateSerializer;
+    return this;
+  }
+
+  /**
+   * For backwards compatibility, accepts a deprecated instance of DaprObjectSerializer.
+   * Use {@link DaprObjectSerializer} instead.
+   *
+   * @param stateSerializer Serializer for objects to be persisted.
+   * @return This instance.
+   */
+  @Deprecated
+  public DaprClientBuilder withStateSerializer(io.dapr.serializer.DaprObjectSerializer stateSerializer) {
+    if (stateSerializer == null) {
+      throw new IllegalArgumentException("State serializer is required");
+    }
+
+    this.stateSerializer = new AdaptedDaprObjectSerializer(stateSerializer);
     return this;
   }
 

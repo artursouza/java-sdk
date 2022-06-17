@@ -34,7 +34,7 @@ import io.dapr.client.domain.StateOptions;
 import io.dapr.client.domain.SubscribeConfigurationRequest;
 import io.dapr.client.domain.TransactionalStateOperation;
 import io.dapr.client.domain.query.Query;
-import io.dapr.serializer.DaprObjectSerializer;
+import io.dapr.serialization.DaprObjectSerializer;
 import io.dapr.utils.TypeRef;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -115,7 +115,7 @@ abstract class AbstractDaprClient implements DaprClient, DaprPreviewClient {
     InvokeMethodRequest req = new InvokeMethodRequest(appId, methodName)
         .setBody(data)
         .setHttpExtension(httpExtension)
-        .setContentType(objectSerializer.getContentType());
+        .setContentType(objectSerializer.getContentType().toString());
 
     return this.invokeMethod(req, type);
   }

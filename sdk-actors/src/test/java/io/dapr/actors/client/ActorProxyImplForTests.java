@@ -14,7 +14,7 @@ limitations under the License.
 package io.dapr.actors.client;
 
 import io.dapr.actors.ActorId;
-import io.dapr.serializer.DaprObjectSerializer;
+import io.dapr.serialization.DaprObjectSerializer;
 
 public class ActorProxyImplForTests extends ActorProxyImpl {
 

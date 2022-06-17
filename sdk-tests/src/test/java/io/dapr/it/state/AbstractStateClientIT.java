@@ -28,7 +28,14 @@ import io.dapr.client.domain.query.Sorting;
 import io.dapr.client.domain.query.filters.EqFilter;
 import io.dapr.exceptions.DaprException;
 import io.dapr.it.BaseIT;
+import io.dapr.serialization.DaprObjectSerializer;
+import io.dapr.serialization.DefaultObjectSerializer;
+import io.dapr.serialization.MimeType;
+import io.dapr.serializer.AdaptedDaprObjectSerializer;
+import org.junit.After;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import reactor.core.publisher.Mono;
 
 import java.util.Arrays;
@@ -46,12 +53,82 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
 /**
  * Common test cases for Dapr client (GRPC and HTTP).
  */
+@RunWith(Parameterized.class)
 public abstract class AbstractStateClientIT extends BaseIT {
-  private static final Logger logger = Logger.getLogger(AbstractStateClientIT.class.getName());
+
+  // Params:
+  // 0: Test case name
+  // 1: Serializer instance
+  // 2: Deprecated serializer instance
+  @Parameterized.Parameters(name = "{0}")
+  public static Iterable<Object[]> serializers() {
+    return Arrays.asList(new Object[][] {
+        {"DefaultObjectSerializer", new DefaultObjectSerializer(), null},
+        {"CustomJsonSerializer", new CustomJsonSerializer(), null},
+        {"CustomIonSerializer", new CustomIonSerializer(), null},
+        {"CustomBinarySerializer", new CustomBinarySerializer(), null},
+        {"Deprecated DefaultObjectSerializer", null, new io.dapr.serializer.DefaultObjectSerializer()},
+        {"Deprecated CustomJsonSerializer", null, new DeprecatedCustomJsonSerializer()},
+        {"Deprecated CustomIonSerializer", null, new DeprecatedCustomIonSerializer()},
+        {"Deprecated CustomBinarySerializer", null, new DeprecatedCustomBinarySerializer()},
+    });
+  }
+
+  private final DaprClient daprClient;
+
+  private final MimeType contentType;
+
+  public AbstractStateClientIT(
+      DaprObjectSerializer serializer,
+      io.dapr.serializer.DaprObjectSerializer deprecatedSerializer) {
+    if ((serializer != null) && (deprecatedSerializer != null)) {
+      throw new IllegalArgumentException("Cannot set both types of serializers to test.");
+    }
+    this.daprClient = buildDaprClient(serializer, deprecatedSerializer);
+    this.contentType = findContentType(serializer, deprecatedSerializer);
+  }
+
+  @After
+  public void after() throws Exception {
+    daprClient.close();
+  }
+
+  protected abstract DaprClient buildDaprClient(DaprObjectSerializer serializer);
+
+  protected abstract DaprClient buildDaprClient(io.dapr.serializer.DaprObjectSerializer serializer);
+
+  protected DaprClient buildDaprClient(
+      DaprObjectSerializer serializer,
+      io.dapr.serializer.DaprObjectSerializer deprecatedSerializer) {
+    if (serializer != null) {
+      return buildDaprClient(serializer);
+    }
+    if (deprecatedSerializer != null) {
+      return buildDaprClient(deprecatedSerializer);
+    }
+    return null;
+  }
+
+  protected MimeType findContentType(
+      DaprObjectSerializer serializer,
+      io.dapr.serializer.DaprObjectSerializer deprecatedSerializer) {
+    if (serializer != null) {
+      return serializer.getContentType();
+    }
+    if (deprecatedSerializer != null) {
+      return new AdaptedDaprObjectSerializer(deprecatedSerializer).getContentType();
+    }
+    return null;
+  }
+
+  protected DaprClient buildDaprClient() {
+    return this.daprClient;
+  }
 
   @Test
   public void saveAndGetState() {
@@ -141,6 +218,10 @@ public abstract class AbstractStateClientIT extends BaseIT {
 
   @Test
   public void saveAndQueryAndDeleteState() throws JsonProcessingException {
+    // This test is only applicable if serialization is JSON.
+    //assumeTrue(this.contentType.toString().toLowerCase().contains("application/json"));
+    assumeTrue(this.contentType.hasAttribute(MimeType.MimeTypeAttribute.JSON));
+
     final String stateKeyOne = UUID.randomUUID().toString();
     final String stateKeyTwo = UUID.randomUUID().toString();
     final String stateKeyThree = UUID.randomUUID().toString();
@@ -170,7 +251,6 @@ public abstract class AbstractStateClientIT extends BaseIT {
     state = new State<>(stateKeyThree, data, null, meta, null );
     request = new SaveStateRequest(QUERY_STATE_STORE).setStates(state);
     daprClient.saveBulkState(request).block();
-
 
     QueryStateRequest queryStateRequest = new QueryStateRequest(QUERY_STATE_STORE);
     Query query = new Query().setFilter(new EqFilter<>("propertyA", commonSearchValue))
@@ -586,9 +666,10 @@ public abstract class AbstractStateClientIT extends BaseIT {
 
   @Test()
   public void saveUpdateAndGetStateWithEtagAndStateOptionsLastWrite() {
-    final String stateKey = "keyToBeUpdatedWithEtagAndOptions";
+    // Adding a salt in the end to make sure local re-runs continue to work.
+    final String stateKey = "keyToBeUpdatedWithEtagAndOptions" + System.currentTimeMillis();
 
-    //create option with concurrency with first writte and consistency of strong
+    //create option with concurrency with first write and consistency of strong
     StateOptions stateOptions = new StateOptions(StateOptions.Consistency.STRONG, StateOptions.Concurrency.LAST_WRITE);
 
     //create dapr client
@@ -759,7 +840,5 @@ public abstract class AbstractStateClientIT extends BaseIT {
   private <T> State<T> createState(String stateKey, String etag, StateOptions options, T data) {
     return new State<>(stateKey, data, etag, options);
   }
-
-  protected abstract DaprClient buildDaprClient();
 
 }

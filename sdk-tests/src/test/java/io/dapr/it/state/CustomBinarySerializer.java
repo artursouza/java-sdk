@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Dapr Authors
+ * Copyright 2022 The Dapr Authors
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -11,7 +11,7 @@
 limitations under the License.
 */
 
-package io.dapr.actors.runtime;
+package io.dapr.it.state;
 
 import io.dapr.serialization.DaprObjectSerializer;
 import io.dapr.serialization.MimeType;
@@ -24,21 +24,21 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 /**
- * Class used to test different serializer implementations.
+ * Emulates a custom binary serializer to validate the SDK behaves the way as with the default serializer.
  */
-public class JavaSerializer implements DaprObjectSerializer {
+class CustomBinarySerializer implements DaprObjectSerializer {
 
   /**
    * {@inheritDoc}
    */
   @Override
   public byte[] serialize(Object o) throws IOException {
-    try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-      try (ObjectOutputStream oos = new ObjectOutputStream(bos)) {
-        oos.writeObject(o);
-        oos.flush();
-        return bos.toByteArray();
+    try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+      try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream)) {
+        objectOutputStream.writeObject(o);
+        objectOutputStream.flush();
       }
+      return byteArrayOutputStream.toByteArray();
     }
   }
 
@@ -47,13 +47,15 @@ public class JavaSerializer implements DaprObjectSerializer {
    */
   @Override
   public <T> T deserialize(byte[] data, TypeRef<T> type) throws IOException {
-    try (ByteArrayInputStream bis = new ByteArrayInputStream(data)) {
-      try (ObjectInputStream ois = new ObjectInputStream(bis)) {
-        try {
-          return (T) ois.readObject();
-        } catch (Exception e) {
-          throw new IOException("Could not deserialize Java object.", e);
-        }
+    if ((data == null) || (data.length == 0)) {
+      return null;
+    }
+
+    try(ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(data))) {
+      try {
+        return (T) in.readObject();
+      } catch (ClassNotFoundException e) {
+        throw new IOException(e);
       }
     }
   }
@@ -63,6 +65,6 @@ public class JavaSerializer implements DaprObjectSerializer {
    */
   @Override
   public MimeType getContentType() {
-    return MimeType.APPLICATION_JSON;
+    return MimeType.APPLICATION_OCTETSTREAM;
   }
 }

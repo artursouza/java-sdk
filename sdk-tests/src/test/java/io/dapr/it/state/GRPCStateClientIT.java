@@ -17,7 +17,7 @@ import io.dapr.client.DaprClient;
 import io.dapr.client.DaprClientBuilder;
 import io.dapr.client.domain.State;
 import io.dapr.it.DaprRun;
-import org.junit.AfterClass;
+import io.dapr.serialization.DaprObjectSerializer;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -32,23 +32,25 @@ public class GRPCStateClientIT extends AbstractStateClientIT {
 
   private static DaprRun daprRun;
 
-  private static DaprClient daprClient;
+  public GRPCStateClientIT(
+      String serializerName,
+      DaprObjectSerializer serializer,
+      io.dapr.serializer.DaprObjectSerializer deprecatedSerializer) {
+    super(serializer, deprecatedSerializer);
+  }
 
   @BeforeClass
   public static void init() throws Exception {
     daprRun = startDaprApp(GRPCStateClientIT.class.getSimpleName(), 5000);
     daprRun.switchToGRPC();
-    daprClient = new DaprClientBuilder().build();
   }
 
-  @AfterClass
-  public static void tearDown() throws Exception {
-    daprClient.close();
+  protected DaprClient buildDaprClient(DaprObjectSerializer serializer) {
+    return new DaprClientBuilder().withObjectSerializer(serializer).withStateSerializer(serializer).build();
   }
-  
-  @Override
-  protected DaprClient buildDaprClient() {
-    return daprClient;
+
+  protected DaprClient buildDaprClient(io.dapr.serializer.DaprObjectSerializer serializer) {
+    return new DaprClientBuilder().withObjectSerializer(serializer).withStateSerializer(serializer).build();
   }
 
   /** Tests where HTTP and GRPC behavior differ in Dapr runtime. **/

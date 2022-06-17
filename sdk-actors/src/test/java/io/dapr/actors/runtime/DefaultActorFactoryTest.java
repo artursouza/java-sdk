@@ -14,7 +14,7 @@ limitations under the License.
 package io.dapr.actors.runtime;
 
 import io.dapr.actors.ActorId;
-import io.dapr.serializer.DaprObjectSerializer;
+import io.dapr.serialization.DaprObjectSerializer;
 import org.junit.Assert;
 import org.junit.Test;
 

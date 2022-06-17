@@ -18,7 +18,7 @@ import io.dapr.actors.ActorType;
 import io.dapr.actors.client.ActorProxy;
 import io.dapr.actors.client.ActorProxyImplForTests;
 import io.dapr.actors.client.DaprClientStub;
-import io.dapr.serializer.DaprObjectSerializer;
+import io.dapr.serialization.DaprObjectSerializer;
 import org.junit.Assert;
 import org.junit.Test;
 import reactor.core.publisher.Mono;
