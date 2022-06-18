@@ -15,6 +15,7 @@ package io.dapr.actors.client;
 
 import io.dapr.actors.ActorId;
 import io.dapr.actors.ActorType;
+import io.dapr.serialization.DaprObjectSerializer;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -53,7 +54,7 @@ public class ActorProxyBuilderTest {
   @Test(expected = IllegalArgumentException.class)
   public void buildWithNullSerializer() {
     new ActorProxyBuilder("MyActor", Object.class, actorClient)
-      .withObjectSerializer(null)
+      .withObjectSerializer((DaprObjectSerializer)null)
       .build(new ActorId("100"));
   }
 

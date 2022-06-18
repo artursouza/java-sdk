@@ -21,6 +21,8 @@ import io.dapr.it.BaseIT;
 import io.dapr.it.DaprRun;
 import io.dapr.it.actors.services.springboot.StatefulActor;
 import io.dapr.it.actors.services.springboot.StatefulActorService;
+import io.dapr.serialization.DaprObjectSerializer;
+import io.dapr.serialization.DefaultObjectSerializer;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -42,16 +44,23 @@ public class ActorStateIT extends BaseIT {
 
   /**
    * Parameters for this test.
-   * Param #1: useGrpc.
+   * Param #1: dapr actor client API protocol.
+   * Param #2: dapr actor runtime API protocol.
+   * Param #3: object serializer.
+   * Param #4: deprecated object serializer.
    * @return Collection of parameter tuples.
    */
   @Parameterized.Parameters
   public static Collection<Object[]> data() {
     return Arrays.asList(new Object[][] {
-        { DaprApiProtocol.HTTP, DaprApiProtocol.HTTP },
-        { DaprApiProtocol.HTTP, DaprApiProtocol.GRPC },
-        { DaprApiProtocol.GRPC, DaprApiProtocol.HTTP },
-        { DaprApiProtocol.GRPC, DaprApiProtocol.GRPC },
+        { DaprApiProtocol.HTTP, DaprApiProtocol.HTTP, null, null},
+        { DaprApiProtocol.HTTP, DaprApiProtocol.HTTP, new DefaultObjectSerializer(), null},
+        { DaprApiProtocol.HTTP, DaprApiProtocol.GRPC, null, null},
+        { DaprApiProtocol.HTTP, DaprApiProtocol.GRPC, new DefaultObjectSerializer(), null},
+        { DaprApiProtocol.GRPC, DaprApiProtocol.HTTP, null, null},
+        { DaprApiProtocol.GRPC, DaprApiProtocol.HTTP, new DefaultObjectSerializer(), null},
+        { DaprApiProtocol.GRPC, DaprApiProtocol.GRPC, null, null},
+        { DaprApiProtocol.GRPC, DaprApiProtocol.GRPC, new DefaultObjectSerializer(), null},
     });
   }
 
@@ -60,6 +69,24 @@ public class ActorStateIT extends BaseIT {
 
   @Parameterized.Parameter(1)
   public DaprApiProtocol serviceAppProtocol;
+
+  @Parameterized.Parameter(2)
+  public DaprObjectSerializer serializer;
+
+  @Parameterized.Parameter(3)
+  public io.dapr.serializer.DaprObjectSerializer deprecatedSerializer;
+
+  private ActorProxy buildActorProxy(String actorType, ActorId actorId) {
+    ActorProxyBuilder<ActorProxy> proxyBuilder =
+        new ActorProxyBuilder(actorType, ActorProxy.class, newActorClient());
+    if (this.serializer != null) {
+      proxyBuilder.withObjectSerializer(this.serializer);
+    }
+    if (this.deprecatedSerializer != null) {
+      proxyBuilder.withObjectSerializer(this.deprecatedSerializer);
+    }
+    return proxyBuilder.build(actorId);
+  }
 
   @Test
   public void writeReadState() throws Exception {

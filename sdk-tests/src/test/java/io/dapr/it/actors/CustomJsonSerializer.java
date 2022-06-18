@@ -1,0 +1,53 @@
+/*
+ * Copyright 2022 The Dapr Authors
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package io.dapr.it.actors;
+
+import io.dapr.serialization.DaprObjectSerializer;
+import io.dapr.serialization.DefaultObjectSerializer;
+import io.dapr.serialization.MimeType;
+import io.dapr.utils.TypeRef;
+
+import java.io.IOException;
+
+/**
+ * Emulates a custom JSON serializer to validate the SDK behaves the way as with the default serializer.
+ */
+class CustomJsonSerializer implements DaprObjectSerializer {
+
+  private static final DaprObjectSerializer DEFAULT_SERIALIZER = new DefaultObjectSerializer();
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public byte[] serialize(Object o) throws IOException {
+    return DEFAULT_SERIALIZER.serialize(o);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public <T> T deserialize(byte[] data, TypeRef<T> type) throws IOException {
+    return DEFAULT_SERIALIZER.deserialize(data, type);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public MimeType getContentType() {
+    return DEFAULT_SERIALIZER.getContentType();
+  }
+}

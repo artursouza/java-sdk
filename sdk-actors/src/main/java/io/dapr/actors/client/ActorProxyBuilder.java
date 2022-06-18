@@ -17,6 +17,7 @@ import io.dapr.actors.ActorId;
 import io.dapr.actors.ActorUtils;
 import io.dapr.serialization.DaprObjectSerializer;
 import io.dapr.serialization.DefaultObjectSerializer;
+import io.dapr.serializer.AdaptedDaprObjectSerializer;
 
 import java.lang.reflect.Proxy;
 
@@ -95,6 +96,21 @@ public class ActorProxyBuilder<T> {
     }
 
     this.objectSerializer = objectSerializer;
+    return this;
+  }
+
+  /**
+   * Instantiates a new builder for a given Actor type, using {@link DefaultObjectSerializer}.
+   *
+   * @param objectSerializer Serializer for objects sent/received.
+   * @return This instance.
+   */
+  public ActorProxyBuilder<T> withObjectSerializer(io.dapr.serializer.DaprObjectSerializer objectSerializer) {
+    if (objectSerializer == null) {
+      throw new IllegalArgumentException("Serializer is required.");
+    }
+
+    this.objectSerializer = new AdaptedDaprObjectSerializer(objectSerializer);
     return this;
   }
 
